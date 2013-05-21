@@ -42,7 +42,7 @@ PRs = [p for p in PRs if p['title'].startswith('Paper:')]
 
 pr_info = []
 for p in PRs:
-    pr_info.append({'user': p['user']['login'], 'title': p['title'],
+    pr_info.append({'user': p['head']['user']['login'], 'title': p['title'],
                     'branch': p['head']['ref'], 'url': p['html_url']})
 
 
