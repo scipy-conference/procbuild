@@ -4,8 +4,9 @@ import shlex
 from glob import glob
 import os
 import shutil
-from futil import age as file_age
+import json
 
+from futil import age as file_age
 
 excluded = ['vanderwalt',]
 
@@ -23,7 +24,6 @@ def cache(path='cache'):
             os.remove(f)
 
     return path
-
 
 #def repo(user='scipy'):
 #    return 'https://github.com/%s/scipy_proceedings.git' % user
@@ -59,7 +59,7 @@ def checkout(repo, branch, build_path):
                  (repo, branch, build_path))
 
 
-def build(user, branch, target):
+def build(user, branch, target, log=None):
     status = {'success': False,
               'output': '',
               'pdf_path': ''}
@@ -93,6 +93,10 @@ def build(user, branch, target):
 
     status['success'] = True
     status['pdf_path'] = target_path
+
+    if log is not None:
+        with open(log, 'w') as f:
+            json.dump(status, f)
 
     return status
 

@@ -6,6 +6,7 @@ from glob import glob
 from futil import age as file_age
 
 from builder import build as build_paper, cache
+from multiprocessing import Process
 
 app = Flask(__name__)
 
@@ -22,8 +23,10 @@ if not app.debug:
     app.logger.addHandler(file_handler)
 
 
+
 def status_file(nr):
     return joinp(cache(), str(nr) + '.status')
+
 
 def status_from_cache(nr):
     if nr == '*':
@@ -37,7 +40,7 @@ def status_from_cache(nr):
         nr = fn.split('/')[-1].split('.')[0]
 
         if not os.path.exists(fn):
-            data[nr] = {'success': False}
+            data[nr] = {'success': False, 'output': ''}
         else:
             with open(fn, 'r') as f:
                 data[nr] = json.load(f)
@@ -47,6 +50,7 @@ def status_from_cache(nr):
         return data[nr]
     else:
         return data
+
 
 @app.route('/')
 def index():
@@ -61,10 +65,14 @@ def build(nr):
 
     age = file_age(status_file(nr))
     if age is None or age > 5:
-        status = build_paper(user=pr['user'], branch=pr['branch'], target=nr)
+        log = status_file(nr)
+        with open(log, 'w') as f:
+            json.dump({'success': False, 'output': 'Building in progress'}, f)
 
-        with open(status_file(nr), 'w') as f:
-            json.dump(status, f)
+        p = Process(target=build_paper,
+                    kwargs=dict(user=pr['user'], branch=pr['branch'],
+                                target=nr, log=log))
+        p.start()
 
     return jsonify({'status': 'OK'})
 
