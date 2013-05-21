@@ -37,13 +37,13 @@ def status_from_cache(nr):
     data = {}
 
     for fn in status_files:
-        nr = fn.split('/')[-1].split('.')[0]
+        n = fn.split('/')[-1].split('.')[0]
 
         if not os.path.exists(fn):
-            data[nr] = {'success': False, 'output': ''}
+            data[n] = {'success': False, 'output': ''}
         else:
             with open(fn, 'r') as f:
-                data[nr] = json.load(f)
+                data[n] = json.load(f)
 
     # Unpack status if only one record requested
     if nr != '*':
@@ -55,6 +55,7 @@ def status_from_cache(nr):
 @app.route('/')
 def index():
     return render_template('index.html', papers=papers,
+                           status=status_from_cache('*'),
                            build_url=url_for('build', nr=''),
                            download_url=url_for('download', nr=''))
 
@@ -67,7 +68,7 @@ def build(nr):
     if age is None or age > 5:
         log = status_file(nr)
         with open(log, 'w') as f:
-            json.dump({'success': False, 'output': 'Building in progress'}, f)
+            json.dump({'success': False, 'status': 'Building...'}, f)
 
         p = Process(target=build_paper,
                     kwargs=dict(user=pr['user'], branch=pr['branch'],

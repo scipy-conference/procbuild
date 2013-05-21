@@ -5,6 +5,7 @@ from glob import glob
 import os
 import shutil
 import json
+import time
 
 from futil import age as file_age
 
@@ -16,12 +17,6 @@ def cache(path='cache'):
         os.mkdir(path)
     except OSError as e:
         pass
-
-    # Delete all files older than 5 minutes
-    cache_files = glob(path + '/*')
-    for f in cache_files:
-        if file_age(f) > 5:
-            os.remove(f)
 
     return path
 
@@ -62,7 +57,8 @@ def checkout(repo, branch, build_path):
 def build(user, branch, target, log=None):
     status = {'success': False,
               'output': '',
-              'pdf_path': ''}
+              'pdf_path': '',
+              'status': 'Build failed.'}
 
     build_path = tempfile.mkdtemp()
 
@@ -92,6 +88,7 @@ def build(user, branch, target, log=None):
     shutil.rmtree(build_path)
 
     status['success'] = True
+    status['status'] = time.strftime('%d/%m %H:%M')
     status['pdf_path'] = target_path
 
     if log is not None:

@@ -1,14 +1,61 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<ul>
+
+
+<script type="text/javascript">
+$(document).ready(function() {
+  $("a").click(function() {
+      $.getJSON($SCRIPT_ROOT + '/build/' + $(this).attr("id"));
+      update_status();
+  });
+});
+
+function update_status() {
+    $.getJSON($SCRIPT_ROOT + '/status', function(data) {
+        $.each(data, function(key, status) {
+            $("#status_" + key).text(status['status']);
+            if (status['success']) {
+                $("#download_" + key).show();
+            } else {
+                $("#download_" + key).hide();
+            }
+        });
+    });
+}
+
+$(document).ready(function() {
+    update_status();
+    setInterval(update_status, 10000);
+});
+
+</script>
+
+<style>
+.download { display: none; }
+</style>
+
+<div class="paper_list">
 {% for n, p in papers %}
-<li>
-  [<a href="{{ download_url + n }}">Download</a> |
-   <a href="{{ build_url + n }}">Build latest</a>]
+<div class="paper">
+
+[
+  <a href="#" id="{{n}}">Build latest</a>
+
+  <span class="download" id="download_{{ n }}">
+  | <a href="{{ download_url + n }}">Download</a>
+  </span>
+
+  <span id="status_{{ n }}"></span>
+
+  ]
+
   <a href="{{ p['url'] }}">{{ p['title'].replace('Paper: ', '') }}</a> by <a
-  href="{{ 'http://github.com/%s' % p['user'] }}">{{ p['user'] }}</a></li>
+  href="{{ 'http://github.com/%s' % p['user'] }}">{{ p['user'] }}</a>
+
+</div>
 {% endfor %}
-</ul>
+</div>
+
 
 {% endblock %}
