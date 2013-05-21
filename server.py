@@ -70,7 +70,7 @@ def build(nr):
         log = status_file(nr)
         with open(log, 'w') as f:
             json.dump({'success': False, 'status': 'Building...',
-                       'timestamp': ''}, f)
+                       'output': '', 'timestamp': ''}, f)
 
 
         def build_and_log(*args, **kwargs):
