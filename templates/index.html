@@ -4,7 +4,8 @@
 <ul>
 {% for n, p in papers %}
 <li>
-  [<a href="{{ build_url + n }}">Build</a>]
+  [<a href="{{ download_url + n }}">Download</a> |
+   <a href="{{ build_url + n }}">Build latest</a>]
   <a href="{{ p['url'] }}">{{ p['title'].replace('Paper: ', '') }}</a> by <a
   href="{{ 'http://github.com/%s' % p['user'] }}">{{ p['user'] }}</a></li>
 {% endfor %}

@@ -4,7 +4,7 @@ import shlex
 from glob import glob
 import os
 import shutil
-from datetime import datetime, timedelta
+from futil import age as file_age
 
 
 excluded = ['vanderwalt',]
@@ -19,18 +19,17 @@ def cache(path='cache'):
     # Delete all files older than 5 minutes
     cache_files = glob(path + '/*')
     for f in cache_files:
-        modified = datetime.fromtimestamp(os.path.getmtime(f))
-        if datetime.now() - modified > timedelta(minutes=5):
+        if file_age(f) > 5:
             os.remove(f)
 
     return path
 
 
-def repo(user='scipy'):
-    return 'https://github.com/%s/scipy_proceedings.git' % user
-
 #def repo(user='scipy'):
-#    return '/tmp/sp'
+#    return 'https://github.com/%s/scipy_proceedings.git' % user
+
+def repo(user='scipy'):
+    return '/tmp/sp'
 
 
 def error(msg):
@@ -46,23 +45,31 @@ def shell(cmd, path=None):
     try:
         return 0, subprocess.check_output(shlex.split(cmd), cwd=path)
     except subprocess.CalledProcessError as e:
-        return 1, e.output
+        return 1, '\n'.join(e.output)
     except OSError as e:
         return 1, 'File not found: ' + e.strerror
 
 
 def checkout(repo, branch, build_path):
-    print 'git clone %s --branch %s --single-branch %s' % (repo, branch, build_path)
+    print 'REMOVE THIS XXX'
+    return shell('git clone %s --branch 2012 --single-branch %s' % \
+                 (repo, build_path))
+
     return shell('git clone %s --branch %s --single-branch %s' % \
                  (repo, branch, build_path))
 
 
 def build(user, branch, target):
+    status = {'success': False,
+              'output': '',
+              'pdf_path': ''}
+
     build_path = tempfile.mkdtemp()
 
     errcode, output = checkout(repo(user), branch, build_path)
+    status['output'] += output
     if errcode:
-        raise RuntimeError('Could not check out git repo: ' + output)
+        return status
 
     papers = glob(build_path + '/papers/*')
     papers = [p for p in papers if not any(p.endswith(e) for e in excluded)]
@@ -70,12 +77,13 @@ def build(user, branch, target):
     try:
         paper = papers[0].split('/')[-1]
     except:
-        raise RuntimeError('No papers found: %s' % papers)
+        status['output'] += 'No papers found: %s' % papers
+        return status
 
     errcode, output = shell('./make_paper.sh papers/%s' % paper, build_path)
-
+    status['output'] += output
     if errcode:
-        raise RuntimeError('Could not build paper: ' + output)
+        return status
 
     target_path = cache() + '/%s.pdf' % target
     shutil.copy('%s/output/%s/paper.pdf' % (build_path, paper),
@@ -83,7 +91,10 @@ def build(user, branch, target):
 
     shutil.rmtree(build_path)
 
-    return target_path
+    status['success'] = True
+    status['pdf_path'] = target_path
+
+    return status
 
 
 if __name__ == "__main__":
