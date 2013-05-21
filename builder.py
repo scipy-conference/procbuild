@@ -20,11 +20,9 @@ def cache(path='cache'):
 
     return path
 
-#def repo(user='scipy'):
-#    return 'https://github.com/%s/scipy_proceedings.git' % user
 
 def repo(user='scipy'):
-    return '/tmp/sp'
+    return 'https://github.com/%s/scipy_proceedings.git' % user
 
 
 def error(msg):
@@ -46,10 +44,6 @@ def shell(cmd, path=None):
 
 
 def checkout(repo, branch, build_path):
-    print 'REMOVE THIS XXX'
-    return shell('git clone %s --branch 2012 --single-branch %s' % \
-                 (repo, build_path))
-
     return shell('git clone %s --branch %s --single-branch %s' % \
                  (repo, branch, build_path))
 
