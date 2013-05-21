@@ -5,10 +5,18 @@
 
 <script type="text/javascript">
 $(document).ready(function() {
-  $("a").click(function() {
+  $(".build").click(function() {
       $.getJSON($SCRIPT_ROOT + '/build/' + $(this).attr("id"));
       update_status();
   });
+
+  $("[id^=status]").click(function() {
+      var nr = $(this).attr("data-nr");
+      $.getJSON($SCRIPT_ROOT + '/status/' + nr, function(data) {
+          $("#output_" + nr).html('<pre>' + data["output"] + '</pre>').toggle()
+      });
+  });
+
 });
 
 function update_status() {
@@ -33,6 +41,7 @@ $(document).ready(function() {
 
 <style>
 .download { display: none; }
+.output { display: none; }
 </style>
 
 <div class="paper_list">
@@ -40,18 +49,22 @@ $(document).ready(function() {
 <div class="paper">
 
 [
-  <a href="#" id="{{n}}">Build latest</a>
+  <a href="#" class="build" id="{{n}}">Build latest</a>
 
   <span class="download" id="download_{{ n }}">
   | <a href="{{ download_url + n }}">Download</a>
   </span>
 
-  <span id="status_{{ n }}"></span>
+  <a href="#" id="status_{{ n }}" data-nr="{{ n }}"></a>
 
   ]
 
   <a href="{{ p['url'] }}">{{ p['title'].replace('Paper: ', '') }}</a> by <a
   href="{{ 'http://github.com/%s' % p['user'] }}">{{ p['user'] }}</a>
+
+  <div class="output" id="output_{{ n }}">
+    Output
+  </div>
 
 </div>
 {% endfor %}
