@@ -4,6 +4,7 @@ import os
 from os.path import join as joinp
 from glob import glob
 from futil import age as file_age
+import time
 
 from builder import build as build_paper, cache
 from multiprocessing import Process
@@ -52,6 +53,11 @@ def status_from_cache(nr):
         return data
 
 
+def killer(p, timeout):
+    time.sleep(timeout)
+    p.terminate()
+
+
 @app.route('/')
 def index():
     return render_template('index.html', papers=papers,
@@ -74,6 +80,9 @@ def build(nr):
                     kwargs=dict(user=pr['user'], branch=pr['branch'],
                                 target=nr, log=log))
         p.start()
+
+        k = Process(target=killer, args=(p, 180))
+        k.start()
 
     return jsonify({'status': 'OK'})
 

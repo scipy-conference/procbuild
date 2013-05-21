@@ -54,6 +54,11 @@ def build(user, branch, target, log=None):
               'pdf_path': '',
               'status': 'Build failed.'}
 
+    master_path = cache() + '/scipy_proceedings'
+    if not os.path.exists(master_path):
+        errcode, output = checkout(repo('scipy'), 'master', master_path)
+        status['output'] += output
+
     build_path = tempfile.mkdtemp()
 
     errcode, output = checkout(repo(user), branch, build_path)
@@ -67,7 +72,14 @@ def build(user, branch, target, log=None):
     try:
         paper = papers[0].split('/')[-1]
     except:
-        status['output'] += 'No papers found: %s' % papers
+        status['output'] += 'No papers found: %s\n' % papers
+        return status
+
+    # For safety, use our copy of the tools
+    status['output'] += 'Copying proceedings build tools...\n'
+    errcode, output = shell('cp -r %s %s' % (master_path, build_path))
+    status['output'] += output
+    if errcode:
         return status
 
     errcode, output = shell('./make_paper.sh papers/%s' % paper, build_path)
