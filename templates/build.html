@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+{% if error %}
+
+Could not build paper:
+
+<hr/>
+{{ error }}
+<hr/>
+
+{% else %}
+
+Build was a success.  <a href="{{ pdf }}">Click here to download</a>.
+
+{% endif %}
+
+{% endblock %}
