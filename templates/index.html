@@ -22,7 +22,7 @@ $(document).ready(function() {
 function update_status() {
     $.getJSON($SCRIPT_ROOT + '/status', function(data) {
         $.each(data, function(key, status) {
-            $("#status_" + key).text(status['status']);
+            $("#status_" + key).text(status['timestamp'] + ' ' + status['status']);
             if (status['success']) {
                 $("#download_" + key).show();
             } else {

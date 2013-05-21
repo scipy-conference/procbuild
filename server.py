@@ -3,7 +3,7 @@ import json
 import os
 from os.path import join as joinp
 from glob import glob
-from futil import age as file_age
+from futil import age as file_age, base_path
 import time
 
 from builder import build as build_paper, cache
@@ -11,17 +11,17 @@ from multiprocessing import Process
 
 app = Flask(__name__)
 
-pr_info = json.load(open('data/pr_info.json'))
+pr_info = json.load(open(joinp(base_path, './data/pr_info.json')))
 
 papers = [(str(n), pr) for n, pr in enumerate(pr_info)]
 
 
-if not app.debug:
-    import logging
-    from logging import FileHandler
-    file_handler = FileHandler("/tmp/flask.log")
-    file_handler.setLevel(logging.WARNING)
-    app.logger.addHandler(file_handler)
+## if not app.debug:
+##     import logging
+##     from logging import FileHandler
+##     file_handler = FileHandler("/tmp/flask.log")
+##     file_handler.setLevel(logging.WARNING)
+##     app.logger.addHandler(file_handler)
 
 
 
@@ -53,11 +53,6 @@ def status_from_cache(nr):
         return data
 
 
-def killer(p, timeout):
-    time.sleep(timeout)
-    p.terminate()
-
-
 @app.route('/')
 def index():
     return render_template('index.html', papers=papers,
@@ -74,12 +69,26 @@ def build(nr):
     if age is None or age > 5:
         log = status_file(nr)
         with open(log, 'w') as f:
-            json.dump({'success': False, 'status': 'Building...'}, f)
+            json.dump({'success': False, 'status': 'Building...',
+                       'timestamp': ''}, f)
 
-        p = Process(target=build_paper,
+
+        def build_and_log(*args, **kwargs):
+            status = build_paper(*args, **kwargs)
+            with open(log, 'w') as f:
+                json.dump(status, f)
+
+        p = Process(target=build_and_log,
                     kwargs=dict(user=pr['user'], branch=pr['branch'],
                                 target=nr, log=log))
         p.start()
+
+        def killer(p, timeout):
+            time.sleep(timeout)
+            try:
+                p.terminate()
+            except OSError:
+                pass
 
         k = Process(target=killer, args=(p, 180))
         k.start()

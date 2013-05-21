@@ -6,19 +6,21 @@ import os
 import shutil
 import json
 import time
+from os.path import join as joinp
 
-from futil import age as file_age
+from futil import age as file_age, base_path
 
 excluded = ['vanderwalt',]
 
 
 def cache(path='cache'):
+    cache_path = joinp(base_path, path)
     try:
-        os.mkdir(path)
+        os.mkdir(cache_path)
     except OSError as e:
         pass
 
-    return path
+    return cache_path
 
 
 def repo(user='scipy'):
@@ -52,14 +54,16 @@ def build(user, branch, target, log=None):
     status = {'success': False,
               'output': '',
               'pdf_path': '',
-              'status': 'Build failed.'}
-
-    master_path = cache() + '/scipy_proceedings'
-    if not os.path.exists(master_path):
-        errcode, output = checkout(repo('scipy'), 'master', master_path)
-        status['output'] += output
+              'status': 'Build failed.',
+              'timestamp': time.strftime('%d/%m %H:%M')}
 
     build_path = tempfile.mkdtemp()
+    master_repo_path = cache() + '/scipy_proceedings'
+    target_path = joinp(cache(), '%s.pdf' % target)
+
+    if not os.path.exists(master_repo_path):
+        errcode, output = checkout(repo('scipy'), 'master', master_repo_path)
+        status['output'] += output
 
     errcode, output = checkout(repo(user), branch, build_path)
     status['output'] += output
@@ -77,29 +81,34 @@ def build(user, branch, target, log=None):
 
     # For safety, use our copy of the tools
     status['output'] += 'Copying proceedings build tools...\n'
-    errcode, output = shell('cp -r %s %s' % (master_path, build_path))
+    errcode, output = shell('cp -r %s %s' % (master_repo_path, build_path))
     status['output'] += output
     if errcode:
         return status
 
-    errcode, output = shell('./make_paper.sh papers/%s' % paper, build_path)
+    paper_path = joinp(build_path, 'papers', paper)
+    output_path = joinp(build_path, 'output', paper)
+
+    shutil.copy('%s/data/IEEEtran.cls' % base_path, paper_path)
+    shutil.copy('%s/data/draftwatermark.sty' % base_path, paper_path)
+    shutil.copy('%s/data/everypage.sty' % base_path, paper_path)
+
+    errcode, output = shell('./make_paper.sh %s' % paper_path, build_path)
     status['output'] += output
     if errcode:
         return status
 
-    target_path = cache() + '/%s.pdf' % target
-    shutil.copy('%s/output/%s/paper.pdf' % (build_path, paper),
-                target_path)
+    try:
+        shutil.copy(joinp(output_path, 'paper.pdf'), target_path)
+    except IOError:
+        status['output'] += 'Paper build failed.'
+        return status
 
     shutil.rmtree(build_path)
 
     status['success'] = True
-    status['status'] = time.strftime('%d/%m %H:%M')
+    status['status'] = 'OK'
     status['pdf_path'] = target_path
-
-    if log is not None:
-        with open(log, 'w') as f:
-            json.dump(status, f)
 
     return status
 
