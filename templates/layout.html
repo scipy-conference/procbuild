@@ -3,6 +3,9 @@
 <html>
 <head>
 
+<link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" type="text/css">
+
 <script type=text/javascript>
   $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 </script>
@@ -19,7 +22,17 @@
 
 <body>
 
+<h1>SciPy Proceedings Build Server</h1>
+
 <div id="content">{% block content %}{% endblock %}</div>
+
+{% block footer %}
+<div id="footer">
+   Copyright (c) 2013, Stéfan van der Walt &middot;
+   Powered by <a href="http://flask.pocoo.org/">Flask</a>
+</div>
+{% endblock %}
+
 
 </body>
 

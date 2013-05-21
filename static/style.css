@@ -1,0 +1,33 @@
+body {
+    font-family: 'Open Sans', sans-serif;
+}
+
+.paper {
+    border: 1px solid #3333CC;
+    background: #EBF5FF;
+    color: #003366;
+    padding: 0.5em;
+    margin: 0.3em;
+}
+
+a {
+    color: #6B246B;
+    text-decoration: none;
+}
+
+a:hover {
+  background: #E6E6E6;
+}
+
+.build {
+  font-weight: bold;
+}
+
+.download {
+  font-weight: bold;
+}
+
+#footer {
+    text-align: right;
+    font-size: 0.75em;
+}
