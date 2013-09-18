@@ -11,6 +11,12 @@ from multiprocessing import Process
 
 app = Flask(__name__)
 
+# --- Customize these variables ---
+MASTER_BRANCH='2013'
+
+# ---
+
+
 pr_info = json.load(open(joinp(base_path, './data/pr_info.json')))
 
 papers = [(str(n), pr) for n, pr in enumerate(pr_info)]
@@ -80,6 +86,7 @@ def build(nr):
 
         p = Process(target=build_and_log,
                     kwargs=dict(user=pr['user'], branch=pr['branch'],
+                                master_branch=MASTER_BRANCH,
                                 target=nr, log=log))
         p.start()
 

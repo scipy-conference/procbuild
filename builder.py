@@ -50,7 +50,7 @@ def checkout(repo, branch, build_path):
                  (repo, branch, build_path))
 
 
-def build(user, branch, target, log=None):
+def build(user, branch, target, master_branch='master', log=None):
     status = {'success': False,
               'output': '',
               'pdf_path': '',
@@ -62,8 +62,13 @@ def build(user, branch, target, log=None):
     target_path = joinp(cache(), '%s.pdf' % target)
 
     if not os.path.exists(master_repo_path):
-        errcode, output = checkout(repo('scipy'), 'master', master_repo_path)
+        errcode, output = checkout(repo('scipy'), master_branch, master_repo_path)
         status['output'] += output
+    else:
+        errcode, output = shell('git pull', master_repo_path)
+        status['output'] += output
+    if errcode:
+        return status
 
     errcode, output = checkout(repo(user), branch, build_path)
     status['output'] += output
@@ -81,7 +86,7 @@ def build(user, branch, target, log=None):
 
     # For safety, use our copy of the tools
     status['output'] += 'Copying proceedings build tools...\n'
-    errcode, output = shell('cp -r %s %s' % (master_repo_path, build_path))
+    errcode, output = shell('cp -r %s/. %s' % (master_repo_path, build_path))
     status['output'] += output
     if errcode:
         return status
