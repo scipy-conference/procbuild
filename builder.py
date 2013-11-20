@@ -62,7 +62,7 @@ def build(user, branch, target, master_branch='master', log=None):
     target_path = joinp(cache(), '%s.pdf' % target)
 
     if not os.path.exists(master_repo_path):
-        errcode, output = checkout(repo('scipy'), master_branch, master_repo_path)
+        errcode, output = checkout(repo('scipy-conference'), master_branch, master_repo_path)
         status['output'] += output
     else:
         errcode, output = shell('git pull', master_repo_path)
