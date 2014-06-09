@@ -73,7 +73,9 @@ def build(nr):
 
     age = file_age(status_file(nr))
     if not (age is None or age > 5):
-        return
+        # Currently, these returns aren't used anywhere, but we
+        # must send back something
+        return jsonify({'status': 'Wait before building again'})
 
     log = status_file(nr)
     with open(log, 'w') as f:
