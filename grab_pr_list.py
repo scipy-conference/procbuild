@@ -36,7 +36,7 @@ def fetch_PRs(user, repo, state='open'):
 
     return data
 
-PRs = fetch_PRs(user='scipy', repo='scipy_proceedings', state='open')
+PRs = fetch_PRs(user='scipy-conference', repo='scipy_proceedings', state='open')
 
 PRs = [p for p in PRs if p['title'].startswith('Paper:')]
 
