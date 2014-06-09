@@ -69,13 +69,16 @@ def index():
 
 @app.route('/build/<nr>')
 def build(nr):
-    pr = pr_info[int(nr)]
+    try:
+        pr = pr_info[int(nr)]
+    except:
+        return jsonify({'status': 'invalid paper'})
 
     age = file_age(status_file(nr))
     if not (age is None or age > 5):
         # Currently, these returns aren't used anywhere, but we
         # must send back something
-        return jsonify({'status': 'Wait before building again'})
+        return jsonify({'status': 'wait a while'})
 
     log = status_file(nr)
     with open(log, 'w') as f:
