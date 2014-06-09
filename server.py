@@ -72,33 +72,35 @@ def build(nr):
     pr = pr_info[int(nr)]
 
     age = file_age(status_file(nr))
-    if age is None or age > 5:
-        log = status_file(nr)
+    if not (age is None or age > 5):
+        return
+
+    log = status_file(nr)
+    with open(log, 'w') as f:
+        json.dump({'success': False, 'status': 'Building...',
+                   'output': '', 'timestamp': ''}, f)
+
+
+    def build_and_log(*args, **kwargs):
+        status = build_paper(*args, **kwargs)
         with open(log, 'w') as f:
-            json.dump({'success': False, 'status': 'Building...',
-                       'output': '', 'timestamp': ''}, f)
+            json.dump(status, f)
 
+    p = Process(target=build_and_log,
+                kwargs=dict(user=pr['user'], branch=pr['branch'],
+                            master_branch=MASTER_BRANCH,
+                            target=nr, log=log))
+    p.start()
 
-        def build_and_log(*args, **kwargs):
-            status = build_paper(*args, **kwargs)
-            with open(log, 'w') as f:
-                json.dump(status, f)
+    def killer(p, timeout):
+        time.sleep(timeout)
+        try:
+            p.terminate()
+        except OSError:
+            pass
 
-        p = Process(target=build_and_log,
-                    kwargs=dict(user=pr['user'], branch=pr['branch'],
-                                master_branch=MASTER_BRANCH,
-                                target=nr, log=log))
-        p.start()
-
-        def killer(p, timeout):
-            time.sleep(timeout)
-            try:
-                p.terminate()
-            except OSError:
-                pass
-
-        k = Process(target=killer, args=(p, 180))
-        k.start()
+    k = Process(target=killer, args=(p, 180))
+    k.start()
 
     return jsonify({'status': 'OK'})
 
