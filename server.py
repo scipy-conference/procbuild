@@ -5,6 +5,7 @@ from os.path import join as joinp
 from glob import glob
 from futil import age as file_age, base_path
 import time
+import logging
 
 from builder import build as build_paper, cache
 from multiprocessing import Process
@@ -22,13 +23,10 @@ pr_info = json.load(open(joinp(base_path, './data/pr_info.json')))
 papers = [(str(n), pr) for n, pr in enumerate(pr_info)]
 
 
-## if not app.debug:
-##     import logging
-##     from logging import FileHandler
-##     file_handler = FileHandler("/tmp/flask.log")
-##     file_handler.setLevel(logging.WARNING)
-##     app.logger.addHandler(file_handler)
+if not app.debug:
+    logging.basicConfig(filename='flask.log', level=logging.DEBUG)
 
+log = logging.getLogger('server')
 
 
 def status_file(nr):
@@ -129,6 +127,12 @@ def download(nr):
         return "Paper has not been successfully rendered yet."
 
     return send_file(status['pdf_path'])
+
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    data = json.loads(request.data)
+    log.info(data)
 
 
 if __name__ == "__main__":
