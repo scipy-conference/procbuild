@@ -1,4 +1,5 @@
-from flask import Flask, render_template, url_for, send_file, jsonify
+from flask import (Flask, render_template, url_for, send_file, jsonify,
+                   request)
 import json
 import os
 from os.path import join as joinp
@@ -6,6 +7,8 @@ from glob import glob
 from futil import age as file_age, base_path
 import time
 import logging
+
+from time import gmtime, strftime
 
 from builder import build as build_paper, cache
 from multiprocessing import Process
@@ -23,10 +26,11 @@ pr_info = json.load(open(joinp(base_path, './data/pr_info.json')))
 papers = [(str(n), pr) for n, pr in enumerate(pr_info)]
 
 
-if not app.debug:
-    logging.basicConfig(filename='flask.log', level=logging.DEBUG)
-
-log = logging.getLogger('server')
+logfile = open(joinp(os.path.dirname(__file__), './flask.log'), 'w')
+def log(message):
+    logfile.write(strftime("%Y-%m-%d %H:%M:%S", gmtime()) + " " +
+                  message + '\n')
+    logfile.flush()
 
 
 def status_file(nr):
@@ -129,10 +133,11 @@ def download(nr):
     return send_file(status['pdf_path'])
 
 
-@app.route('/webhook', methods=['POST'])
+@app.route('/webhook')
 def webhook():
+    log('hello world')
     data = json.loads(request.data)
-    log.info(data)
+    log(data)
 
 
 if __name__ == "__main__":
