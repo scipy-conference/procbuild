@@ -31,25 +31,34 @@ def error(msg):
     print msg
 
 
-def shell(cmd, path=None):
+def shell(cmd, path=None, retry=0):
     """
     Raises
     ------
     CalledProcessError (has .returncode, .output parameter)
     """
-    try:
-        return 0, subprocess.check_output(shlex.split(cmd), cwd=path)
-    except subprocess.CalledProcessError as e:
-        if not isinstance(e.output, list):
-            e.output = [e.output]
-        return 1, '\n'.join(e.output)
-    except OSError as e:
-        return 1, 'File not found: ' + e.strerror
+    returncode = 0
+    output = ''
+    for i in range(retry + 1):
+        try:
+            return 0, subprocess.check_output(shlex.split(cmd), cwd=path)
+        except subprocess.CalledProcessError as e:
+            if not isinstance(e.output, list):
+                e.output = [e.output]
+            returncode = e.returncode
+            output += '\n'.join(e.output)
+        except OSError as e:
+            return 1, 'File not found: ' + e.strerror
+
+        output += '\nRetrying after 5s...'
+        time.sleep(5)
+
+    return returncode, output
 
 
 def checkout(repo, branch, build_path):
     return shell('git clone %s --branch %s --single-branch %s' % \
-                 (repo, branch, build_path))
+                 (repo, branch, build_path), retry=2)
 
 
 def build(user, branch, target, master_branch='master', log=None):
