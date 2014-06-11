@@ -40,6 +40,8 @@ def shell(cmd, path=None):
     try:
         return 0, subprocess.check_output(shlex.split(cmd), cwd=path)
     except subprocess.CalledProcessError as e:
+        if not isinstance(e.output, list):
+            e.output = [e.output]
         return 1, '\n'.join(e.output)
     except OSError as e:
         return 1, 'File not found: ' + e.strerror
