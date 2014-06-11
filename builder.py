@@ -75,9 +75,8 @@ def build(user, branch, target, master_branch='master', log=None):
     add_output(output)
 
     if errcode:
-        add_output('[X] Error code %d\n' % errcode)
-        status['data']['build_status'] = 'Failed to check out build tools'
-        return status
+        add_output('[X] Error code %d '
+                   '(could be in use by another build)\n' % errcode)
 
     add_output('[*] Check out paper repository...\n')
     errcode, output = checkout(repo(user), branch, build_path)
