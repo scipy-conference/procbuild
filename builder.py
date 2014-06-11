@@ -52,7 +52,7 @@ def checkout(repo, branch, build_path):
 
 def build(user, branch, target, master_branch='master', log=None):
     status = {'status': 'fail',
-              'data': {'build_status': 'Build failed',
+              'data': {'build_status': 'Building started',
                        'build_output': '',
                        'build_pdf_path': '',
                        'build_timestamp': time.strftime('%d/%m %H:%M')}}
@@ -75,6 +75,7 @@ def build(user, branch, target, master_branch='master', log=None):
     add_output(output)
 
     if errcode:
+        status['data']['build_status'] = 'Failed to check out build tools'
         return status
 
     add_output('Checking out paper repository...\n')
@@ -82,6 +83,7 @@ def build(user, branch, target, master_branch='master', log=None):
     add_output(output)
 
     if errcode:
+        status['data']['build_status'] = 'Failed to check out paper'
         return status
 
     papers = glob(build_path + '/papers/*')
@@ -91,6 +93,7 @@ def build(user, branch, target, master_branch='master', log=None):
         paper = papers[0].split('/')[-1]
     except:
         add_output('No papers found: %s\n' % papers)
+        status['data']['build_status'] = 'Paper not found'
         return status
 
     # For safety, use our copy of the tools
@@ -98,6 +101,7 @@ def build(user, branch, target, master_branch='master', log=None):
     errcode, output = shell('cp -r %s/. %s' % (master_repo_path, build_path))
     add_output(output)
     if errcode:
+        status['data']['build_status'] = 'Could not install build tools'
         return status
 
     paper_path = joinp(build_path, 'papers', paper)
@@ -111,6 +115,7 @@ def build(user, branch, target, master_branch='master', log=None):
     errcode, output = shell('./make_paper.sh %s' % paper_path, build_path)
     add_output(output)
     if errcode:
+        status['data']['build_status'] = 'Build failed'
         return status
 
     try:
