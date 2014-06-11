@@ -2,7 +2,6 @@
 
 {% block content %}
 
-
 <script type="text/javascript">
 /* Define startswith for String */
 if (typeof String.prototype.startsWith != 'function') {
@@ -14,8 +13,18 @@ if (typeof String.prototype.startsWith != 'function') {
 
 $(document).ready(function() {
   $(".build").click(function() {
-      $.getJSON($SCRIPT_ROOT + '/build/' + $(this).attr("id"));
+      $("#recently_rebuilt").hide("fast");
+      $.getJSON($SCRIPT_ROOT + '/build/' + $(this).attr("id"),
+                function(response) {
+                  if (response['status'] != 'success') {
+                    $("#recently_rebuilt").show("slow");
+                  }
+                });
       update_status();
+  });
+
+  $("#recently_rebuilt").click(function() {
+    $(this).slideUp();
   });
 
   $("[id^=status]").click(function() {
@@ -70,6 +79,11 @@ $(document).ready(function() {
 .output { display: none; }
 </style>
 
+<div id="recently_rebuilt" class="message" title="Fresh from the oven">
+  <p>A build has been triggered recently.  Please wait until 5 minutes has
+  passed before attempting another build.</p>
+</div>
+
 <div class="paper_list">
 {% for n, p in papers %}
 <div class="paper">
@@ -87,7 +101,10 @@ $(document).ready(function() {
   <a href="{{ p['url'] }}">{{ p['title'].replace('Paper: ', '') }}</a> by <a
   href="{{ 'http://github.com/%s' % p['user'] }}">{{ p['user'] }}</a>
 
-  <a href="#" class="build" id="{{n}}">[Rebuild]</a>
+  <a href="#" class="build" id="{{n}}">
+    <img src="{{ url_for('static', filename='refresh-icon.png') }}"
+         height="20px"/>
+  </a>
 
   <div class="output" id="output_{{ n }}">
     Output
