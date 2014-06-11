@@ -73,6 +73,7 @@ def build(user, branch, target, master_branch='master', log=None):
         errcode, output = shell('git pull', master_repo_path)
 
     add_output(output)
+    add_output('Error code %d\n' % errcode)
 
     if errcode:
         status['data']['build_status'] = 'Failed to check out build tools'
@@ -81,6 +82,7 @@ def build(user, branch, target, master_branch='master', log=None):
     add_output('Checking out paper repository...\n')
     errcode, output = checkout(repo(user), branch, build_path)
     add_output(output)
+    add_output('Error code %d\n' % errcode)
 
     if errcode:
         status['data']['build_status'] = 'Failed to check out paper'
