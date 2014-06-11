@@ -50,7 +50,7 @@ def shell(cmd, path=None, retry=0):
             output += '\n'.join(e.output)
         except OSError as e:
             if not 'Resource temporarily unavailable' in e.strerror:
-                return 1, e.strerror
+                return 1, e.strerror + '\n';
             else:
                 output += '\n' + e.strerror
 
@@ -59,12 +59,12 @@ def shell(cmd, path=None, retry=0):
             output += '\nRetrying after %ds...\n' % delay
             time.sleep(delay)
 
-    return returncode, output
+    return returncode, output.strip() + '\n'
 
 
 def checkout(repo, branch, build_path):
     return shell('git clone %s --branch %s --single-branch %s' % \
-                 (repo, branch, build_path), retry=2)
+                 (repo, branch, build_path), retry=3)
 
 
 def build(user, branch, target, master_branch='master', log=None):
