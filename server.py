@@ -51,7 +51,8 @@ def status_from_cache(nr):
         n = fn.split('/')[-1].split('.')[0]
 
         if not os.path.exists(fn):
-            data[n] = {'success': 'fail', 'build_output': ''}
+            data[n] = {'success': 'fail',
+                       'data': {'build_output': 'No build has been attempted'}}
         else:
             with open(fn, 'r') as f:
                 data[n] = json.load(f)['data']
@@ -95,7 +96,7 @@ def build(nr):
     with open(log, 'w') as f:
         json.dump({'status': 'success',
                    'data': {'build_status': 'Building...',
-                            'build_output': '',
+                            'build_output': 'Initializing build...',
                             'build_timestamp': ''}}, f)
 
 
