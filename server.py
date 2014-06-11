@@ -51,10 +51,10 @@ def status_from_cache(nr):
         n = fn.split('/')[-1].split('.')[0]
 
         if not os.path.exists(fn):
-            data[n] = {'success': False, 'output': ''}
+            data[n] = {'success': 'fail', 'build_output': ''}
         else:
             with open(fn, 'r') as f:
-                data[n] = json.load(f)
+                data[n] = json.load(f)['data']
 
     # Unpack status if only one record requested
     if nr != '*':
@@ -70,6 +70,7 @@ def index():
         log("Updating papers...")
         update_papers()
 
+    print status_from_cache('*')
     return render_template('index.html', papers=papers,
                            status=status_from_cache('*'),
                            build_url=url_for('build', nr=''),
@@ -81,18 +82,23 @@ def build(nr):
     try:
         pr = pr_info[int(nr)]
     except:
-        return jsonify({'status': 'invalid paper'})
+        return jsonify({'status': 'fail',
+                        'message': 'Invalid paper specified'})
 
     age = file_age(status_file(nr))
     if not (age is None or age > 5):
         # Currently, these returns aren't used anywhere, but we
         # must send back something
-        return jsonify({'status': 'wait a while'})
+        return jsonify({'status': 'fail',
+                        'message': 'Paper was rebuilt recently. '
+                                   'Wait a while'})
 
     log = status_file(nr)
     with open(log, 'w') as f:
-        json.dump({'success': False, 'status': 'Building...',
-                   'output': '', 'timestamp': ''}, f)
+        json.dump({'status': 'success',
+                   'data': {'build_status': 'Building...',
+                            'build_output': '',
+                            'build_timestamp': ''}}, f)
 
 
     def build_and_log(*args, **kwargs):
@@ -134,17 +140,18 @@ def status(nr=None):
 def download(nr):
     status = status_from_cache(nr)
 
-    if not status['success']:
+    if not status['succes']:
         return "Paper has not been successfully rendered yet."
 
     return send_file(status['pdf_path'])
 
 
-@app.route('/webhook')
+@app.route('/webhook', methods=['POST'])
 def webhook():
-    log('hello world')
+    print request.data
     data = json.loads(request.data)
-    log(data)
+#    log(data)
+    return jsonify({'status': 'success'})
 
 
 if __name__ == "__main__":
