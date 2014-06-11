@@ -12,6 +12,7 @@ from time import gmtime, strftime
 
 from builder import build as build_paper, cache
 from multiprocessing import Process
+from pr_list import update_papers, pr_list_file
 
 app = Flask(__name__)
 
@@ -20,11 +21,12 @@ MASTER_BRANCH='2014'
 
 # ---
 
+if not os.path.isfile(pr_list_file):
+    update_papers()
 
-pr_info = json.load(open(joinp(base_path, './data/pr_info.json')))
-
+with open(pr_list_file) as f:
+    pr_info = json.load(f)
 papers = [(str(n), pr) for n, pr in enumerate(pr_info)]
-
 
 logfile = open(joinp(os.path.dirname(__file__), './flask.log'), 'w')
 def log(message):
@@ -63,6 +65,11 @@ def status_from_cache(nr):
 
 @app.route('/')
 def index():
+    prs_age = file_age(pr_list_file)
+    if (prs_age is None or prs_age > 60):
+        log("Updating papers...")
+        update_papers()
+
     return render_template('index.html', papers=papers,
                            status=status_from_cache('*'),
                            build_url=url_for('build', nr=''),

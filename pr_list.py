@@ -1,8 +1,14 @@
+__all__ = ['fetch_PRs', 'update_papers']
+
 import urllib3
 
 import json
 import os
+from os.path import join as joinp
 
+
+from builder import cache
+pr_list_file = joinp(cache(), 'pr_info.json')
 
 
 def fetch_PRs(user, repo, state='open'):
@@ -52,13 +58,7 @@ def update_papers():
         pr_info.append({'user': p['head']['user']['login'], 'title': p['title'],
                         'branch': p['head']['ref'], 'url': p['html_url']})
 
-
-    try:
-        os.mkdir('data')
-    except:
-        pass
-
-    with open('data/pr_info.json', 'w') as f:
+    with open(pr_list_file, 'w') as f:
         json.dump(pr_info, f)
 
 
