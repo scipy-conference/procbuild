@@ -41,20 +41,26 @@ def fetch_PRs(user, repo, state='open'):
 
     return data
 
-PRs = fetch_PRs(user='scipy-conference', repo='scipy_proceedings', state='open')
 
-PRs = [p for p in PRs if p['title'].startswith('Paper:')]
+def update_papers():
+    PRs = fetch_PRs(user='scipy-conference', repo='scipy_proceedings', state='open')
 
-pr_info = []
-for p in PRs:
-    pr_info.append({'user': p['head']['user']['login'], 'title': p['title'],
-                    'branch': p['head']['ref'], 'url': p['html_url']})
+    PRs = [p for p in PRs if p['title'].startswith('Paper:')]
+
+    pr_info = []
+    for p in PRs:
+        pr_info.append({'user': p['head']['user']['login'], 'title': p['title'],
+                        'branch': p['head']['ref'], 'url': p['html_url']})
 
 
-try:
-    os.mkdir('data')
-except:
-    pass
+    try:
+        os.mkdir('data')
+    except:
+        pass
 
-with open('data/pr_info.json', 'w') as f:
-    json.dump(pr_info, f)
+    with open('data/pr_info.json', 'w') as f:
+        json.dump(pr_info, f)
+
+
+if __name__ == "__main__":
+    update_papers()
