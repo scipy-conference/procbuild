@@ -65,7 +65,7 @@ def build(user, branch, target, master_branch='master', log=None):
     target_path = joinp(cache(), '%s.pdf' % target)
 
 
-    add_output('Updating proceedings build tools...\n')
+    add_output('[*] Update proceedings build tools...\n')
     if not os.path.exists(master_repo_path):
         errcode, output = checkout(repo('scipy-conference'), master_branch,
                                    master_repo_path)
@@ -73,18 +73,18 @@ def build(user, branch, target, master_branch='master', log=None):
         errcode, output = shell('git pull', master_repo_path)
 
     add_output(output)
-    add_output('Error code %d\n' % errcode)
 
     if errcode:
+        add_output('[X] Error code %d\n' % errcode)
         status['data']['build_status'] = 'Failed to check out build tools'
         return status
 
-    add_output('Checking out paper repository...\n')
+    add_output('[*] Check out paper repository...\n')
     errcode, output = checkout(repo(user), branch, build_path)
     add_output(output)
-    add_output('Error code %d\n' % errcode)
 
     if errcode:
+        add_output('[X] Error code %d\n' % errcode)
         status['data']['build_status'] = 'Failed to check out paper'
         return status
 
@@ -94,7 +94,7 @@ def build(user, branch, target, master_branch='master', log=None):
     try:
         paper = papers[0].split('/')[-1]
     except:
-        add_output('No papers found: %s\n' % papers)
+        add_output('[X] No papers found: %s\n' % papers)
         status['data']['build_status'] = 'Paper not found'
         return status
 
@@ -103,6 +103,7 @@ def build(user, branch, target, master_branch='master', log=None):
     errcode, output = shell('cp -r %s/. %s' % (master_repo_path, build_path))
     add_output(output)
     if errcode:
+        add_output('[X] Error code %d\n' % errcode)
         status['data']['build_status'] = 'Could not install build tools'
         return status
 
@@ -113,20 +114,21 @@ def build(user, branch, target, master_branch='master', log=None):
     shutil.copy('%s/data/draftwatermark.sty' % base_path, paper_path)
     shutil.copy('%s/data/everypage.sty' % base_path, paper_path)
 
-    add_output('Build the paper...\n')
+    add_output('[*] Build the paper...\n')
     errcode, output = shell('./make_paper.sh %s' % paper_path, build_path)
     add_output(output)
     if errcode:
+        add_output('[X] Error code %d\n' % errcode)
         status['data']['build_status'] = 'Build failed'
         return status
 
     try:
         shutil.copy(joinp(output_path, 'paper.pdf'), target_path)
     except IOError:
-        add_output('Paper build failed.\n')
+        add_output('[X] Paper build failed.\n')
         return status
 
-    add_output('Removing temporary files...\n')
+    add_output('[*] Remove temporary files...\n')
     shutil.rmtree(build_path)
 
     status['status'] = 'success'

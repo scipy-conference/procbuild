@@ -24,6 +24,21 @@ a:hover {
   float: right;
 }
 
+.output {
+  font-size: 80%;
+}
+
+.output-error {
+  font-weight: bold;
+  font-color: red;
+  font-size: 120%;
+}
+
+.output-info {
+  font-weight: bold;
+  font-size: 120%;
+}
+
 .download {
   font-weight: bold;
 }

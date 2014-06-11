@@ -4,6 +4,14 @@
 
 
 <script type="text/javascript">
+/* Define startswith for String */
+if (typeof String.prototype.startsWith != 'function') {
+  // see below for better implementation!
+  String.prototype.startsWith = function (str){
+    return this.indexOf(str) == 0;
+  };
+}
+
 $(document).ready(function() {
   $(".build").click(function() {
       $.getJSON($SCRIPT_ROOT + '/build/' + $(this).attr("id"));
@@ -13,7 +21,25 @@ $(document).ready(function() {
   $("[id^=status]").click(function() {
       var nr = $(this).attr("data-nr");
       $.getJSON($SCRIPT_ROOT + '/status/' + nr, function(status) {
-          $("#output_" + nr).html('<pre>' + status["build_output"] + '</pre>').toggle()
+          var html = '';
+          $.each((status["build_output"] + "\n").split("\n"),
+                 function(nr, value) {
+                   value = $.trim(value);
+                   if (!value) return;
+
+                   if (m = value.match('^\\[(.)] (.*)')) {
+
+                     if (m[1] == 'X') {
+                       html += '<span class="output-error">&bull; ' + m[2] + '</span><br/>';
+                     } else {
+                       html += '<span class="output-info">&bull; ' + m[2] + '</span><br/>';
+                     }
+
+                   } else {
+                     html += value + "<br/>";
+                   }
+                 });
+          $("#output_" + nr).html(html).toggle()
       });
   });
 
