@@ -6,6 +6,7 @@ import os
 import shutil
 import json
 import time
+import random
 from os.path import join as joinp
 
 from futil import age as file_age, base_path
@@ -48,10 +49,15 @@ def shell(cmd, path=None, retry=0):
             returncode = e.returncode
             output += '\n'.join(e.output)
         except OSError as e:
-            return 1, 'File not found: ' + e.strerror
+            if not 'Resource temporarily unavailable' in e.strerror:
+                return 1, e.strerror
+            else:
+                output += '\n' + e.strerror
 
-        output += '\nRetrying after 5s...'
-        time.sleep(5)
+        if i < retry:
+            delay = random.randint(5, 10)
+            output += '\nRetrying after %ds...\n' % delay
+            time.sleep(delay)
 
     return returncode, output
 
