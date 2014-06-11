@@ -111,7 +111,7 @@ def build(user, branch, target, master_branch='master', log=None):
     shutil.copy('%s/data/draftwatermark.sty' % base_path, paper_path)
     shutil.copy('%s/data/everypage.sty' % base_path, paper_path)
 
-    add_outut('Build the paper...\n')
+    add_output('Build the paper...\n')
     errcode, output = shell('./make_paper.sh %s' % paper_path, build_path)
     add_output(output)
     if errcode:

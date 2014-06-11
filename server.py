@@ -121,7 +121,7 @@ def build(nr):
     k = Process(target=killer, args=(p, 180))
     k.start()
 
-    return jsonify({'status': 'OK'})
+    return jsonify({'status': 'success'})
 
 
 @app.route('/status')
