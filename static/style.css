@@ -29,9 +29,7 @@ a:hover {
 }
 
 .output-error {
-  font-weight: bold;
-  font-color: red;
-  font-size: 120%;
+  color: red;
 }
 
 .output-info {

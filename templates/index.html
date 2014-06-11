@@ -30,7 +30,7 @@ $(document).ready(function() {
                    if (m = value.match('^\\[(.)] (.*)')) {
 
                      if (m[1] == 'X') {
-                       html += '<span class="output-error">&bull; ' + m[2] + '</span><br/>';
+                       html += '<span class="output-error">' + m[2] + '</span><br/>';
                      } else {
                        html += '<span class="output-info">&bull; ' + m[2] + '</span><br/>';
                      }
