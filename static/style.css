@@ -21,6 +21,7 @@ a:hover {
 
 .build {
   font-weight: bold;
+  float: right;
 }
 
 .download {

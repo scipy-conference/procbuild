@@ -70,9 +70,7 @@ def index():
         log("Updating papers...")
         update_papers()
 
-    print status_from_cache('*')
     return render_template('index.html', papers=papers,
-                           status=status_from_cache('*'),
                            build_url=url_for('build', nr=''),
                            download_url=url_for('download', nr=''))
 
@@ -140,17 +138,15 @@ def status(nr=None):
 def download(nr):
     status = status_from_cache(nr)
 
-    if not status['succes']:
+    if not (status['build_status'] == 'success'):
         return "Paper has not been successfully rendered yet."
 
-    return send_file(status['pdf_path'])
+    return send_file(status['build_pdf_path'])
 
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    print request.data
     data = json.loads(request.data)
-#    log(data)
     return jsonify({'status': 'success'})
 
 

@@ -117,7 +117,7 @@ def build(user, branch, target, master_branch='master', log=None):
     shutil.rmtree(build_path)
 
     status['status'] = 'success'
-    status['data']['build_status'] = 'OK'
+    status['data']['build_status'] = 'success'
     status['data']['build_pdf_path'] = target_path
 
     return status

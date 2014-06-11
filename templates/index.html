@@ -12,8 +12,8 @@ $(document).ready(function() {
 
   $("[id^=status]").click(function() {
       var nr = $(this).attr("data-nr");
-      $.getJSON($SCRIPT_ROOT + '/status/' + nr, function(data) {
-          $("#output_" + nr).html('<pre>' + data["build_output"] + '</pre>').toggle()
+      $.getJSON($SCRIPT_ROOT + '/status/' + nr, function(status) {
+          $("#output_" + nr).html('<pre>' + status["build_output"] + '</pre>').toggle()
       });
   });
 
@@ -23,7 +23,7 @@ function update_status() {
     $.getJSON($SCRIPT_ROOT + '/status', function(data) {
         $.each(data, function(key, status) {
             $("#status_" + key).text(status['build_timestamp'] + ' ' + status['build_status']);
-            if (status['success']) {
+            if (status['build_status'] == 'success') {
                 $("#download_" + key).show();
             } else {
                 $("#download_" + key).hide();
@@ -48,11 +48,10 @@ $(document).ready(function() {
 {% for n, p in papers %}
 <div class="paper">
 
-[
-  <a href="#" class="build" id="{{n}}">Build latest</a>
+  [
 
   <span class="download" id="download_{{ n }}">
-  | <a href="{{ download_url + n }}">Download</a>
+    <a href="{{ download_url + n }}">View PDF</a>
   </span>
 
   <a href="#" id="status_{{ n }}" data-nr="{{ n }}"></a>
@@ -61,6 +60,8 @@ $(document).ready(function() {
 
   <a href="{{ p['url'] }}">{{ p['title'].replace('Paper: ', '') }}</a> by <a
   href="{{ 'http://github.com/%s' % p['user'] }}">{{ p['user'] }}</a>
+
+  <a href="#" class="build" id="{{n}}">[Rebuild]</a>
 
   <div class="output" id="output_{{ n }}">
     Output
