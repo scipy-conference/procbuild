@@ -29,12 +29,18 @@ def status_from_cache(nr):
     for fn in status_files:
         n = fn.split('/')[-1].split('.')[0]
 
-        if not os.path.exists(fn):
+        try:
+            papers[int(n)]
+        except:
             data[n] = {'success': 'fail',
-                       'data': {'build_output': 'No build has been attempted'}}
+                       'data': {'build_output': 'Invalid paper'}}
         else:
-            with open(fn, 'r') as f:
-                data[n] = json.load(f)['data']
+            if not os.path.exists(fn):
+                data[n] = {'success': 'fail',
+                           'data': {'build_output': 'No build has been attempted'}}
+            else:
+                with open(fn, 'r') as f:
+                    data[n] = json.load(f)['data']
 
     # Unpack status if only one record requested
     if nr != '*':
@@ -84,8 +90,9 @@ def build(nr):
 
     return jsonify({'status': 'success',
                     'data': {'info': 'Build scheduled.  Note that builds '
-                                     'are only executed if the current PDF '
-                                     'is more than 5 minutes old.'}})
+                                     'are only executed if the current '
+                                     'build attempt is more than '
+                                     '5 minutes old.'}})
 
 
 def _build_worker(nr):

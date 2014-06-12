@@ -64,7 +64,7 @@ def shell(cmd, path=None, retry=0):
 
 def checkout(repo, branch, build_path):
     return shell('git clone %s --branch %s --single-branch %s' % \
-                 (repo, branch, build_path), retry=1)
+                 (repo, branch, build_path), retry=4)
 
 
 def build(user, branch, target, master_branch='master', log=None):
@@ -87,7 +87,7 @@ def build(user, branch, target, master_branch='master', log=None):
         errcode, output = checkout(repo('scipy-conference'), master_branch,
                                    master_repo_path)
     else:
-        errcode, output = shell('git pull', master_repo_path, retry=1)
+        errcode, output = shell('git pull', master_repo_path, retry=4)
 
     add_output(output)
 
