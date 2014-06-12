@@ -13,19 +13,34 @@ if (typeof String.prototype.startsWith != 'function') {
 
 $(document).ready(function() {
   $(".build").click(function() {
-      $("#recently_rebuilt").hide("fast");
+      $("#error").hide("fast");
+      $("#error").html("");
+
+      $("#info").hide("fast");
+      $("#info").html("");
+
       $.getJSON($SCRIPT_ROOT + '/build/' + $(this).attr("id"),
                 function(response) {
                   if (response['status'] != 'success') {
-                    $("#recently_rebuilt").show("slow");
+                    $("#error").html('<em>' +
+                                     response["message"] + '</em>');
+                    $("#error").show("slow");
+                  } else {
+                    $("#info").html(response["data"]["info"])
+                    $("#info").show("slow");
                   }
                 });
       update_status();
   });
 
-  $("#recently_rebuilt").click(function() {
+  $("#error").click(function() {
     $(this).slideUp();
   });
+
+  $("#info").click(function() {
+    $(this).slideUp();
+  });
+
 
   $("[id^=status]").click(function() {
       var nr = $(this).attr("data-nr");
@@ -79,10 +94,14 @@ $(document).ready(function() {
 .output { display: none; }
 </style>
 
-<div id="recently_rebuilt" class="message" title="Fresh from the oven">
-  <p>A build has been triggered recently.  Please wait until 5 minutes has
-  passed before attempting another build.</p>
+<div id="error">
+  <p></p>
 </div>
+
+<div id="info">
+  <p></p>
+</div>
+
 
 <div class="paper_list">
 {% for n, p in papers %}

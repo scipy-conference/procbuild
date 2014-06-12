@@ -1,4 +1,6 @@
-from flask import (Flask, render_template, url_for, send_file, jsonify,
+from procbuild import app, log, MASTER_BRANCH, papers, pr_info, paper_queue
+
+from flask import (render_template, url_for, send_file, jsonify,
                    request)
 import json
 import os
@@ -6,33 +8,10 @@ from os.path import join as joinp
 from glob import glob
 from futil import age as file_age, base_path
 import time
-import logging
-
-from time import gmtime, strftime
 
 from builder import build as build_paper, cache
 from multiprocessing import Process
 from pr_list import update_papers, pr_list_file
-
-app = Flask(__name__)
-
-# --- Customize these variables ---
-MASTER_BRANCH='2014'
-
-# ---
-
-if not os.path.isfile(pr_list_file):
-    update_papers()
-
-with open(pr_list_file) as f:
-    pr_info = json.load(f)
-papers = [(str(n), pr) for n, pr in enumerate(pr_info)]
-
-logfile = open(joinp(os.path.dirname(__file__), './flask.log'), 'w')
-def log(message):
-    logfile.write(strftime("%Y-%m-%d %H:%M:%S", gmtime()) + " " +
-                  message + '\n')
-    logfile.flush()
 
 
 def status_file(nr):
@@ -76,6 +55,19 @@ def index():
                            download_url=url_for('download', nr=''))
 
 
+def _process_queue(queue):
+    while 1:
+        nr = queue.get()
+        log("Queue yielded paper #%d. Left: %d" % (nr, queue.qsize()))
+        _build_worker(nr)
+
+def monitor_queue():
+    print "Launching queue monitoring process..."
+    p = Process(target=_process_queue, kwargs=dict(queue=paper_queue))
+    p.start()
+
+
+
 @app.route('/build/<nr>')
 def build(nr):
     try:
@@ -84,17 +76,29 @@ def build(nr):
         return jsonify({'status': 'fail',
                         'message': 'Invalid paper specified'})
 
+    if paper_queue.qsize() >= 5:
+        return jsonify({'status': 'fail',
+                        'message': 'Build queue is currently full.'})
+
+    paper_queue.put(int(nr))
+
+    return jsonify({'status': 'success',
+                    'data': {'info': 'Build scheduled.  Note that builds '
+                                     'are only executed if the current PDF '
+                                     'is more than 5 minutes old.'}})
+
+
+def _build_worker(nr):
+    pr = pr_info[int(nr)]
+
     age = file_age(status_file(nr))
     if not (age is None or age > 5):
-        # Currently, these returns aren't used anywhere, but we
-        # must send back something
-        return jsonify({'status': 'fail',
-                        'message': 'Paper was rebuilt recently. '
-                                   'Wait a while'})
+        log("Did not build paper %d--recently built." % nr)
+        return
 
-    log = status_file(nr)
-    with open(log, 'w') as f:
-        json.dump({'status': 'success',
+    status_log = status_file(nr)
+    with open(status_log, 'w') as f:
+        json.dump({'status': 'fail',
                    'data': {'build_status': 'Building...',
                             'build_output': 'Initializing build...',
                             'build_timestamp': ''}}, f)
@@ -102,7 +106,7 @@ def build(nr):
 
     def build_and_log(*args, **kwargs):
         status = build_paper(*args, **kwargs)
-        with open(log, 'w') as f:
+        with open(status_log, 'w') as f:
             json.dump(status, f)
 
     p = Process(target=build_and_log,
@@ -121,7 +125,9 @@ def build(nr):
     k = Process(target=killer, args=(p, 180))
     k.start()
 
-    return jsonify({'status': 'success'})
+    # Wait for process to complete or to be killed
+    p.join()
+    k.terminate()
 
 
 @app.route('/status')
@@ -149,7 +155,3 @@ def download(nr):
 def webhook():
     data = json.loads(request.data)
     return jsonify({'status': 'success'})
-
-
-if __name__ == "__main__":
-    app.run(debug=True)

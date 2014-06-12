@@ -46,9 +46,16 @@ a:hover {
   font-size: 0.75em;
 }
 
-.message {
+#info {
+  background: #D5D5EF;
+  padding: 1em;
+  margin: 0;
+  display: none;
+}
+
+#error {
   background: #FAD5DF;
-  padding: 0;
+  padding: 1em;
   margin: 0;
   display: none;
 }
