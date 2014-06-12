@@ -69,7 +69,7 @@ def checkout(repo, branch, build_path):
 
 def build(user, branch, target, master_branch='master', log=None):
     status = {'status': 'fail',
-              'data': {'build_status': 'Building started',
+              'data': {'build_status': 'Build started...',
                        'build_output': '',
                        'build_pdf_path': '',
                        'build_timestamp': time.strftime('%d/%m %H:%M')}}
@@ -87,7 +87,7 @@ def build(user, branch, target, master_branch='master', log=None):
         errcode, output = checkout(repo('scipy-conference'), master_branch,
                                    master_repo_path)
     else:
-        errcode, output = shell('git pull', master_repo_path)
+        errcode, output = shell('git pull', master_repo_path, retry=3)
 
     add_output(output)
 
@@ -142,6 +142,7 @@ def build(user, branch, target, master_branch='master', log=None):
         shutil.copy(joinp(output_path, 'paper.pdf'), target_path)
     except IOError:
         add_output('[X] Paper build failed.\n')
+        status['data']['build_status'] = 'Build failed'
         return status
 
     add_output('[*] Remove temporary files...\n')
