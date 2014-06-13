@@ -20,7 +20,7 @@ def status_file(nr):
 
 def status_from_cache(nr):
     if nr == '*':
-        status_files = glob(status_file(nr))
+        status_files = [status_file(i) for i in range(len(papers))]
     else:
         status_files = [status_file(nr)]
 
@@ -40,7 +40,11 @@ def status_from_cache(nr):
                            'data': {'build_output': 'No build has been attempted'}}
             else:
                 with open(fn, 'r') as f:
-                    data[n] = json.load(f)['data']
+                    try:
+                        data[n] = json.load(f)['data']
+                    except ValueError:
+                        data[n] = {'success': 'fail',
+                                   'data': {'build_output': 'No status'}}
 
     # Unpack status if only one record requested
     if nr != '*':
@@ -122,10 +126,10 @@ def _build_worker(nr):
                             target=nr, log=log))
     p.start()
 
-    def killer(p, timeout):
+    def killer(process, timeout):
         time.sleep(timeout)
         try:
-            p.terminate()
+            process.terminate()
         except OSError:
             pass
 
