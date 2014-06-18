@@ -1,6 +1,7 @@
 # SciPy Proceedings Builder
 
-- Customize `server.py` to update this year's branch.
+- Customize `runserver.py` to update this year's branch.
+  For debugging, enable ``ALLOW_MANUAL_BUILD_TRIGGER``.
 - Launch by running `server.py`.
 
 You need all the same dependencies as for building the proceedings as well:
@@ -17,4 +18,3 @@ You need all the same dependencies as for building the proceedings as well:
 sudo apt-get install python-docutils texlive-latex-base texlive-publishers \
                      texlive-latex-extra texlive-fonts-recommended
 ```
-

@@ -126,10 +126,12 @@ $(document).ready(function() {
   <a href="{{ p['url'] }}">{{ p['title'].replace('Paper: ', '') }}</a> by <a
   href="{{ 'http://github.com/%s' % p['user'] }}">{{ p['user'] }}</a>
 
+  {% if allow_manual_build_trigger %}
   <a href="#" class="build" id="{{n}}">
     <img src="{{ url_for('static', filename='refresh-icon.png') }}"
          height="20px"/>
   </a>
+  {% endif %}
 
   <div class="output" id="output_{{ n }}">
     Output

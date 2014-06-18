@@ -1,4 +1,5 @@
-from procbuild import app, log, MASTER_BRANCH, papers, pr_info, paper_queue
+from procbuild import (app, log, papers, pr_info, paper_queue,
+                       MASTER_BRANCH, ALLOW_MANUAL_BUILD_TRIGGER)
 
 from flask import (render_template, url_for, send_file, jsonify,
                    request)
@@ -61,7 +62,8 @@ def index():
 
     return render_template('index.html', papers=papers,
                            build_url=url_for('build', nr=''),
-                           download_url=url_for('download', nr=''))
+                           download_url=url_for('download', nr=''),
+                           allow_manual_build_trigger=ALLOW_MANUAL_BUILD_TRIGGER)
 
 
 def _process_queue(queue):
@@ -76,9 +78,10 @@ def monitor_queue():
     p.start()
 
 
+def dummy_build(nr):
+        return jsonify({'status': 'fail', 'message': 'Not authorized'})
 
-@app.route('/build/<nr>')
-def build(nr):
+def real_build(nr):
     try:
         pr = pr_info[int(nr)]
     except:
@@ -96,6 +99,14 @@ def build(nr):
                                      'builds are only executed if the current '
                                      'build attempt is more than '
                                      '5 minutes old.' % nr}})
+
+
+@app.route('/build/<nr>')
+def build(*args, **kwarg):
+    if ALLOW_MANUAL_BUILD_TRIGGER:
+        return real_build(*args, **kwarg)
+    else:
+        return dummy_build(*args, **kwarg)
 
 
 def _build_worker(nr):
@@ -173,7 +184,7 @@ def webhook():
     paper = [p for p, info in papers if info['url'] == pr_url]
 
     if paper:
-        return build(paper[0])
+        return real_build(paper[0])
     else:
         return jsonify({'status': 'fail',
                         'message': 'Hook called for building '
