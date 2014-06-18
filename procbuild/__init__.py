@@ -26,6 +26,7 @@ app = Flask(__name__)
 
 logfile = open(joinp(os.path.dirname(__file__), '../flask.log'), 'w')
 def log(message):
+    print(message)
     logfile.write(strftime("%Y-%m-%d %H:%M:%S", gmtime()) + " " +
                   message + '\n')
     logfile.flush()
