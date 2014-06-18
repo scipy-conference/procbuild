@@ -32,19 +32,18 @@ def status_from_cache(nr):
         try:
             papers[int(n)]
         except:
-            data[n] = {'success': 'fail',
+            data[n] = {'status': 'fail',
                        'data': {'build_output': 'Invalid paper'}}
         else:
-            if not os.path.exists(fn):
-                data[n] = {'success': 'fail',
-                           'data': {'build_output': 'No build has been attempted'}}
-            else:
+            status = {'status': 'fail',
+                      'data': {'build_output': 'No build info'}}
+
+            if os.path.exists(fn):
                 with open(fn, 'r') as f:
                     try:
-                        data[n] = json.load(f)['data']
+                        data[n] = json.load(f)
                     except ValueError:
-                        data[n] = {'success': 'fail',
-                                   'data': {'build_output': 'No status'}}
+                        pass
 
     # Unpack status if only one record requested
     if nr != '*':

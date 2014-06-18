@@ -71,9 +71,15 @@ $(document).ready(function() {
 
 function update_status() {
     $.getJSON($SCRIPT_ROOT + '/status', function(data) {
-        $.each(data, function(key, status) {
-            $("#status_" + key).text(status['build_timestamp'] + ' ' + status['build_status']);
-            if (status['build_status'] == 'success') {
+        $.each(data, function(key, response) {
+            var status = response["data"];
+            if (response["status"] == "success") {
+              $("#status_" + key).text(status["build_timestamp"] + ' ' +
+                                       status["build_status"]);
+            } else {
+              $("#status_" + key).text("No build info")
+            }
+            if (status["build_status"] == "success") {
                 $("#download_" + key).show();
             } else {
                 $("#download_" + key).hide();
