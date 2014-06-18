@@ -67,10 +67,15 @@ def index():
 
 
 def _process_queue(queue):
-    while 1:
+    done = False
+    while not done:
         nr = queue.get()
-        log("Queue yielded paper #%d. Left: %d" % (nr, queue.qsize()))
-        _build_worker(nr)
+        if nr is None:
+            log("Sentinel found in queue. Ending queue monitor.")
+            done = True
+        else:
+            log("Queue yielded paper #%d. Left: %d" % (nr, queue.qsize()))
+            _build_worker(nr)
 
 def monitor_queue():
     print "Launching queue monitoring process..."
