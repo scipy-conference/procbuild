@@ -155,10 +155,10 @@ def status(nr=None):
 def download(nr):
     status = status_from_cache(nr)
 
-    if not (status['build_status'] == 'success'):
+    if not (status.get('data', {}).get('build_status', '') == 'success'):
         return "Paper has not been successfully rendered yet."
 
-    return send_file(status['build_pdf_path'])
+    return send_file(status['data']['build_pdf_path'])
 
 
 @app.route('/webhook', methods=['POST'])
