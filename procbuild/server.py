@@ -164,4 +164,5 @@ def download(nr):
 @app.route('/webhook', methods=['POST'])
 def webhook():
     data = json.loads(request.data)
+    log('webhook:' + request.data);
     return jsonify({'status': 'success'})
