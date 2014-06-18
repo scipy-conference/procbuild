@@ -42,7 +42,8 @@ def shell(cmd, path=None, retry=0):
     output = ''
     for i in range(retry + 1):
         try:
-            return 0, subprocess.check_output(shlex.split(cmd), cwd=path)
+            return 0, subprocess.check_output(shlex.split(cmd), cwd=path,
+                                              stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             if not isinstance(e.output, list):
                 e.output = [e.output]
