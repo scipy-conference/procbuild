@@ -1,2 +1,4 @@
+#!/usr/bin/env python
+
 from procbuild import app
 app.run(debug=True, host='0.0.0.0', port=8080)
