@@ -78,15 +78,16 @@ def build(user, branch, target, master_branch='master', log=None):
         status['data']['build_output'] += msg
 
     build_path = tempfile.mkdtemp()
-    master_repo_path = cache() + '/scipy_proceedings'
+    master_repo_path = joinp(cache(), '/scipy_proceedings')
     target_path = joinp(cache(), '%s.pdf' % target)
 
 
-    add_output('[*] Update proceedings build tools...\n')
     if not os.path.exists(master_repo_path):
+        add_output('[*] Checking out proceedings build tools...\n')
         errcode, output = checkout(repo('scipy-conference'), master_branch,
                                    master_repo_path)
     else:
+        add_output('[*] Updating proceedings build tools...\n')
         errcode, output = shell('git pull', master_repo_path, retry=4)
 
     add_output(output)
