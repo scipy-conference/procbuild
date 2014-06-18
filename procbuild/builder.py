@@ -83,18 +83,20 @@ def build(user, branch, target, master_branch='master', log=None):
 
 
     if not os.path.exists(master_repo_path):
-        add_output('[*] Checking out proceedings build tools...\n')
+        add_output('[*] Checking out proceedings build tools '
+                   'to %s...\n' % master_repo_path)
         errcode, output = checkout(repo('scipy-conference'), master_branch,
                                    master_repo_path)
     else:
-        add_output('[*] Updating proceedings build tools...\n')
-        errcode, output = shell('git pull', master_repo_path, retry=4)
+        add_output('[*] Updating proceedings build tools in'
+                   ' %s...\n' % master_repo_path)
+        errcode, output = shell('git pull', master_repo_path, retry=2)
 
     add_output(output)
 
     if errcode:
-        add_output('[X] Error code %d '
-                   '(could be in use by another build)\n' % errcode)
+        add_output('[X] Error code %d ' % errcode)
+        return status
 
     add_output('[*] Check out paper repository...\n')
     errcode, output = checkout(repo(user), branch, build_path)
