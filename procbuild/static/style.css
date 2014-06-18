@@ -10,13 +10,13 @@ body {
   margin: 0.3em;
 }
 
+.paper:hover {
+  background: #DBE5EF;
+}
+
 a {
   color: #6B246B;
   text-decoration: none;
-}
-
-a:hover {
-  background: #E6E6E6;
 }
 
 .build {
