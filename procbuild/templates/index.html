@@ -46,7 +46,7 @@ $(document).ready(function() {
       var nr = $(this).attr("data-nr");
       $.getJSON($SCRIPT_ROOT + '/status/' + nr, function(status) {
           var html = '';
-          $.each((status["build_output"] + "\n").split("\n"),
+          $.each((status["data"]["build_output"] + "\n").split("\n"),
                  function(nr, value) {
                    value = $.trim(value);
                    if (!value) return;
