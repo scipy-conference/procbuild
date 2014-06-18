@@ -92,10 +92,10 @@ def build(nr):
     paper_queue.put(int(nr))
 
     return jsonify({'status': 'success',
-                    'data': {'info': 'Build scheduled.  Note that builds '
-                                     'are only executed if the current '
+                    'data': {'info': 'Build for paper %s scheduled.  Note that '
+                                     'builds are only executed if the current '
                                      'build attempt is more than '
-                                     '5 minutes old.'}})
+                                     '5 minutes old.' % nr}})
 
 
 def _build_worker(nr):
@@ -163,6 +163,18 @@ def download(nr):
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    data = json.loads(request.data)
-    log('webhook:' + request.data);
-    return jsonify({'status': 'success'})
+    try:
+        data = json.loads(request.data)
+    except:
+        return jsonify({'status': 'fail',
+                        'message': 'Invalid JSON data'})
+
+    pr_url = data.get('pull_request', {}).get('html_url', '')
+    paper = [p for p, info in papers if info['url'] == pr_url]
+
+    if paper:
+        return build(paper[0])
+    else:
+        return jsonify({'status': 'fail',
+                        'message': 'Hook called for building '
+                                   'non-existing paper (%s)' % pr_url})
