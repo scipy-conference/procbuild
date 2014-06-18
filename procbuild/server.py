@@ -88,7 +88,7 @@ def real_build(nr):
         return jsonify({'status': 'fail',
                         'message': 'Invalid paper specified'})
 
-    if paper_queue.qsize() >= 5:
+    if paper_queue.qsize() >= 50:
         return jsonify({'status': 'fail',
                         'message': 'Build queue is currently full.'})
 
@@ -113,7 +113,7 @@ def _build_worker(nr):
     pr = pr_info[int(nr)]
 
     age = file_age(status_file(nr))
-    if not (age is None or age > 5):
+    if not (age is None or age > 2):
         log("Did not build paper %d--recently built." % nr)
         return
 
