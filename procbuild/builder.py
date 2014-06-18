@@ -78,7 +78,7 @@ def build(user, branch, target, master_branch='master', log=None):
         status['data']['build_output'] += msg
 
     build_path = tempfile.mkdtemp()
-    master_repo_path = joinp(cache(), '/scipy_proceedings')
+    master_repo_path = joinp(cache(), 'scipy_proceedings')
     target_path = joinp(cache(), '%s.pdf' % target)
 
 
