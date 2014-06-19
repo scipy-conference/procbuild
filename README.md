@@ -10,7 +10,7 @@ You need all the same dependencies as for building the proceedings as well:
    [CTAN](http://www.ctan.org/tex-archive/macros/latex/contrib/IEEEtran/)
    LaTeX class
  - AMSmath LaTeX classes (included in most LaTeX distributions)
- - `docutils` 0.8 or later (``easy_install docutils``)
+ - `docutils` 0.11 or later (``easy_install docutils``)
  - `pygments` for code highlighting (``easy_install pygments``)
 
 
