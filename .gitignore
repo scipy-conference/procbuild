@@ -1,3 +1,4 @@
 *.pyc
 *~
-
+flask.log
+cache
