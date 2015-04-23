@@ -5,6 +5,8 @@
 - Install dependencies: ``pip install -r requirements.txt``
 - Launch by running `runserver.py`.
 
+Note: the server has not been ported to Python 3 yet.
+
 You need all the same dependencies as for building the proceedings as well:
 
  - IEEETran (often packaged as ``texlive-publishers``, or download from
