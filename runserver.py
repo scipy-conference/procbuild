@@ -13,4 +13,10 @@ for (key, val) in config:
         os.environ[key] = val
 
 from procbuild import app
-app.run(debug=False, host='0.0.0.0', port=8080)
+from waitress import serve
+
+serve(app, host='0.0.0.0', port=8080)
+
+# Without waitress, this is the call:
+#
+# app.run(debug=False, host='0.0.0.0', port=8080)
