@@ -2,7 +2,8 @@
 
 - Customize `runserver.py` to update this year's branch.
   For debugging, enable ``ALLOW_MANUAL_BUILD_TRIGGER``.
-- Launch by running `server.py`.
+- Install dependencies: ``pip install -r requirements.txt``
+- Launch by running `runserver.py`.
 
 You need all the same dependencies as for building the proceedings as well:
 
@@ -12,7 +13,6 @@ You need all the same dependencies as for building the proceedings as well:
  - AMSmath LaTeX classes (included in most LaTeX distributions)
  - `docutils` 0.11 or later (``easy_install docutils``)
  - `pygments` for code highlighting (``easy_install pygments``)
-
 
 ```
 sudo apt-get install python-docutils texlive-latex-base texlive-publishers \
