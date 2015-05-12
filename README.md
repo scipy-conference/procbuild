@@ -3,7 +3,8 @@
 - Customize `runserver.py` to update this year's branch.
   For debugging, enable ``ALLOW_MANUAL_BUILD_TRIGGER``.
 - Install dependencies: ``pip install -r requirements.txt``
-- Launch by running `runserver.py`.
+- Fetch PRs by running `./update_prs`
+- Launch by running `runserver.py`
 
 Note: the server has not been ported to Python 3 yet.
 
