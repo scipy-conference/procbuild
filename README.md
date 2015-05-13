@@ -2,6 +2,9 @@
 
 - Customize `runserver.py` to update this year's branch.
   For debugging, enable ``ALLOW_MANUAL_BUILD_TRIGGER``.
+- In the `scipy-conference/scipy_proceedings` repo: in the webhooks add a payload 
+  URL pointing to the webapp (such as `http://server.com:5000/webhook`). You must 
+  select only Pull Requests in the checkbox menu.
 - Install dependencies: ``pip install -r requirements.txt``
 - Fetch PRs by running `./update_prs`
 - Launch by running `runserver.py`
@@ -21,3 +24,4 @@ You need all the same dependencies as for building the proceedings as well:
 sudo apt-get install python-docutils texlive-latex-base texlive-publishers \
                      texlive-latex-extra texlive-fonts-recommended
 ```
+
