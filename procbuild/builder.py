@@ -11,7 +11,7 @@ from os.path import join as joinp
 
 from futil import age as file_age, base_path
 
-excluded = ['vanderwalt',]
+excluded = ['vanderwalt','00_vanderwalt','jane_doe']
 
 
 def cache(path='../cache'):
