@@ -13,7 +13,7 @@ else:
 for p in to_build:
     print "Placing %s in the build queue." % p
     paper_queue[0].put(int(p))
-    paper_queue[1] += int(p)
+    paper_queue[1] += 1
 
 # Add sentinel to queue
 paper_queue[0].put(None)

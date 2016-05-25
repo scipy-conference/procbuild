@@ -98,7 +98,7 @@ def real_build(nr):
                         'message': 'Build queue is currently full.'})
 
     paper_queue[0].put(int(nr))
-    paper_queue[1] += int(nr)
+    paper_queue[1] += 1
 
     return jsonify({'status': 'success',
                     'data': {'info': 'Build for paper %s scheduled.  Note that '
