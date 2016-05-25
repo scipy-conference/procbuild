@@ -16,5 +16,5 @@ for p in to_build:
     paper_queue[1] += int(p)
 
 # Add sentinel to queue
-paper_queue.put(None)
+paper_queue[0].put(None)
 
