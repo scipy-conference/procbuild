@@ -2,8 +2,8 @@
 
 # -- SERVER CONFIGURATION -- (can be overridden from shell)
 
-config = (('MASTER_BRANCH', '2015'),
-          ('ALLOW_MANUAL_BUILD_TRIGGER', '0'))
+config = (('MASTER_BRANCH', '2016'),
+          ('ALLOW_MANUAL_BUILD_TRIGGER', '1'))
 
 # -- END SERVER CONFIGURATION --
 

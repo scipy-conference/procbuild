@@ -1,6 +1,6 @@
 # --- Customize these variables ---
 import os
-MASTER_BRANCH = os.environ.get('MASTER_BRANCH', '2015')
+MASTER_BRANCH = os.environ.get('MASTER_BRANCH', '2016')
 ALLOW_MANUAL_BUILD_TRIGGER = bool(int(os.environ.get(
     'ALLOW_MANUAL_BUILD_TRIGGER', 1)))
 
@@ -42,7 +42,8 @@ with open(pr_list_file) as f:
     papers = [(str(n), pr) for n, pr in enumerate(pr_info)]
 
 print "Setting up build queue..."
-paper_queue = Queue()
+paper_queue_size = 0
+paper_queue = {0:Queue(), 1:paper_queue_size}
 
 import server
 server.monitor_queue()

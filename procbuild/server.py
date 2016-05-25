@@ -74,12 +74,12 @@ def _process_queue(queue):
             log("Sentinel found in queue. Ending queue monitor.")
             done = True
         else:
-            log("Queue yielded paper #%d. Left: %d" % (nr, queue.qsize()))
+            log("Queue yielded paper #%d." % nr)
             _build_worker(nr)
 
 def monitor_queue():
     print "Launching queue monitoring process..."
-    p = Process(target=_process_queue, kwargs=dict(queue=paper_queue))
+    p = Process(target=_process_queue, kwargs=dict(queue=paper_queue[0]))
     p.start()
 
 
@@ -93,11 +93,12 @@ def real_build(nr):
         return jsonify({'status': 'fail',
                         'message': 'Invalid paper specified'})
 
-    if paper_queue.qsize() >= 50:
+    if paper_queue[1] >= 50:
         return jsonify({'status': 'fail',
                         'message': 'Build queue is currently full.'})
 
-    paper_queue.put(int(nr))
+    paper_queue[0].put(int(nr))
+    paper_queue[1] += 1
 
     return jsonify({'status': 'success',
                     'data': {'info': 'Build for paper %s scheduled.  Note that '

@@ -22,6 +22,8 @@ You need all the same dependencies as for building the proceedings as well:
 
 ```
 sudo apt-get install python-docutils texlive-latex-base texlive-publishers \
-                     texlive-latex-extra texlive-fonts-recommended
+                     texlive-latex-extra texlive-fonts-recommended \
+                     texlive-bibtex-extra
 ```
+
 
