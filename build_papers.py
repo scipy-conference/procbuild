@@ -2,7 +2,7 @@
 
 # Schedule some or all papers for build
 
-from procbuild import papers, paper_queue 
+from procbuild import papers, paper_queue
 import sys
 
 if len(sys.argv) > 1:
