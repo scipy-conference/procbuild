@@ -1,24 +1,43 @@
 from __future__ import print_function, absolute_import 
 
-
 from flask import (render_template, url_for, send_file, jsonify,
                    request, Flask)
 import json
 import os
-from os.path import join as joinp
-from glob import glob
+import io 
 import time
 
-from multiprocessing import Process
+from os.path import join as joinp
+from glob import glob
+from flask import Flask
 
-from procbuild import (log, papers, pr_info, paper_queue,
-                       MASTER_BRANCH, ALLOW_MANUAL_BUILD_TRIGGER)
+from multiprocessing import Process, Queue
+
+from procbuild import MASTER_BRANCH, ALLOW_MANUAL_BUILD_TRIGGER
+
 from .builder import build as build_paper, cache
 from .pr_list import update_papers, pr_list_file
 from .futil import age as file_age, base_path
 
-from flask import Flask
+if not os.path.isfile(pr_list_file):
+    update_papers()
+
+with open(pr_list_file) as f:
+    pr_info = json.load(f)
+    papers = [(str(n), pr) for n, pr in enumerate(pr_info)]
+
 app = Flask(__name__)
+
+print("Setting up build queue...")
+paper_queue_size = 0
+paper_queue = {0:Queue(), 1:paper_queue_size}
+
+logfile = io.open(joinp(os.path.dirname(__file__), '../flask.log'), 'w')
+def log(message):
+    print(message)
+    logfile.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + " " +
+                  message + '\n')
+    logfile.flush()
 
 def status_file(nr):
     return joinp(cache(), str(nr) + '.status')
