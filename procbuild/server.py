@@ -11,7 +11,7 @@ import time
 
 from multiprocessing import Process
 
-from procbuild import (app, log, papers, pr_info, paper_queue,
+from procbuild import (log, papers, pr_info, paper_queue,
                        MASTER_BRANCH, ALLOW_MANUAL_BUILD_TRIGGER)
 from .builder import build as build_paper, cache
 from .pr_list import update_papers, pr_list_file
