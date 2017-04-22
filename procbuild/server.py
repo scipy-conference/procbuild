@@ -1,5 +1,5 @@
-from procbuild import (app, log, papers, pr_info, paper_queue,
-                       MASTER_BRANCH, ALLOW_MANUAL_BUILD_TRIGGER)
+from __future__ import print_function, absolute_import 
+
 
 from flask import (render_template, url_for, send_file, jsonify,
                    request)
@@ -7,13 +7,15 @@ import json
 import os
 from os.path import join as joinp
 from glob import glob
-from futil import age as file_age, base_path
 import time
 
-from builder import build as build_paper, cache
 from multiprocessing import Process
-from pr_list import update_papers, pr_list_file
 
+from .procbuild import (app, log, papers, pr_info, paper_queue,
+                       MASTER_BRANCH, ALLOW_MANUAL_BUILD_TRIGGER)
+from .builder import build as build_paper, cache
+from .pr_list import update_papers, pr_list_file
+from .futil import age as file_age, base_path
 
 def status_file(nr):
     return joinp(cache(), str(nr) + '.status')

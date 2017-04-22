@@ -1,3 +1,5 @@
+from __future__ import print_function, absolute_import
+
 import tempfile
 import subprocess
 import shlex
@@ -9,7 +11,7 @@ import time
 import random
 from os.path import join as joinp
 
-from futil import age as file_age, base_path
+from .futil import age as file_age, base_path
 
 excluded = ['vanderwalt','00_vanderwalt','jane_doe','bibderwalt','00_intro']
 
@@ -29,7 +31,7 @@ def repo(user='scipy'):
 
 
 def error(msg):
-    print msg
+    print(msg)
 
 
 def shell(cmd, path=None, retry=0):
