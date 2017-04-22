@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 # Schedule some or all papers for build
 
@@ -11,7 +12,7 @@ else:
     to_build = [nr for nr, info in papers]
 
 for p in to_build:
-    print "Placing %s in the build queue." % p
+    print("Placing %s in the build queue." % p)
     paper_queue[0].put(int(p))
     paper_queue[1] += 1
 

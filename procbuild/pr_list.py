@@ -1,3 +1,5 @@
+from __future__ import print_function, absolute_import
+
 __all__ = ['fetch_PRs', 'update_papers']
 
 import urllib3
@@ -7,7 +9,7 @@ import os
 from os.path import join as joinp
 
 
-from builder import cache
+from .builder import cache
 pr_list_file = joinp(cache(), 'pr_info.json')
 
 
@@ -30,7 +32,7 @@ def fetch_PRs(user, repo, state='open'):
     while page_data:
         fetch_status = 'Fetching page %(page)d (state=%(state)s)' % fields + \
                        ' from %(user)s/%(repo)s...' % config
-        print fetch_status
+        print(fetch_status)
 
         response = http.request('GET', url, fields=fields,
                                 headers={'user-agent': 'scipy-procbuild/0.1'})
@@ -41,7 +43,7 @@ def fetch_PRs(user, repo, state='open'):
 
         if 'message' in page_data and page_data['message'] == "Not Found":
             page_data = []
-            print 'Warning: Repo not found (%(user)s/%(repo)s)' % config
+            print('Warning: Repo not found (%(user)s/%(repo)s)' % config)
         else:
             data.extend(page_data)
 
