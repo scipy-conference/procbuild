@@ -10,8 +10,6 @@ ALLOW_MANUAL_BUILD_TRIGGER = bool(int(os.environ.get(
 __all__ = ['app', 'log', 'MASTER_BRANCH', 'papers', 'paper_queue']
 
 
-from flask import Flask
-
 import json
 
 from os.path import join as joinp
@@ -21,7 +19,7 @@ from multiprocessing import Queue
 from .pr_list import update_papers, pr_list_file
 from . import server
 
-app = Flask(__name__)
+app = server.app
 
 logfile = open(joinp(os.path.dirname(__file__), '../flask.log'), 'w')
 

@@ -2,7 +2,7 @@ from __future__ import print_function, absolute_import
 
 
 from flask import (render_template, url_for, send_file, jsonify,
-                   request)
+                   request, Flask)
 import json
 import os
 from os.path import join as joinp
@@ -11,11 +11,14 @@ import time
 
 from multiprocessing import Process
 
-from .procbuild import (app, log, papers, pr_info, paper_queue,
+from procbuild import (app, log, papers, pr_info, paper_queue,
                        MASTER_BRANCH, ALLOW_MANUAL_BUILD_TRIGGER)
 from .builder import build as build_paper, cache
 from .pr_list import update_papers, pr_list_file
 from .futil import age as file_age, base_path
+
+from flask import Flask
+app = Flask(__name__)
 
 def status_file(nr):
     return joinp(cache(), str(nr) + '.status')
@@ -80,7 +83,7 @@ def _process_queue(queue):
             _build_worker(nr)
 
 def monitor_queue():
-    print "Launching queue monitoring process..."
+    print("Launching queue monitoring process...")
     p = Process(target=_process_queue, kwargs=dict(queue=paper_queue[0]))
     p.start()
 
