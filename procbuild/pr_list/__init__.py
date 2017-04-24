@@ -43,7 +43,7 @@ def fetch_PRs(user, repo, state='open'):
 
         if 'message' in page_data and page_data['message'] == "Not Found":
             page_data = []
-            print('Warning: Repo not found ({user}s/{repo}s)'.format(**config))
+            print('Warning: Repo not found ({user:s}/{repo:s})'.format(**config))
         else:
             data.extend(page_data)
 
