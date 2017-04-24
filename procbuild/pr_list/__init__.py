@@ -9,7 +9,7 @@ import os
 from os.path import join as joinp
 
 
-from .builder import cache
+from ..builder import cache
 pr_list_file = joinp(cache(), 'pr_info.json')
 
 
