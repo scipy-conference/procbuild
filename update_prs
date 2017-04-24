@@ -1,2 +1,2 @@
 rm -f cache/*.status cache/*.pdf
-python procbuild/pr_list.py
+python -m procbuild.pr_list

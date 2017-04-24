@@ -9,7 +9,7 @@ import os
 from os.path import join as joinp
 
 
-from .builder import cache
+from procbuild.builder import cache
 pr_list_file = joinp(cache(), 'pr_info.json')
 
 
@@ -20,13 +20,13 @@ def fetch_PRs(user, repo, state='open'):
 
     config = {'user': user,
               'repo': repo}
-    config = dict(config.items() + fields.items())
 
+    config.update(fields)
 
     data = []
     page_data = True
-
-    url = 'https://api.github.com/repos/%(user)s/%(repo)s/pulls' % config
+    
+    url = 'https://api.github.com/repos/{user}s/{repo}s/pulls'.format(**config)
     http = urllib3.PoolManager()
 
     while page_data:
