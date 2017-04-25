@@ -15,8 +15,8 @@ for (key, val) in config:
 from procbuild import app
 from waitress import serve
 
-serve(app, host='0.0.0.0', port=6000)
+serve(app, host='0.0.0.0', port=7000)
 
 # Without waitress, this is the call:
 #
-# app.run(debug=False, host='0.0.0.0', port=6000)
+# app.run(debug=False, host='0.0.0.0', port=7000)
