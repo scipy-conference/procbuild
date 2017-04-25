@@ -39,7 +39,7 @@ def fetch_PRs(user, repo, state='open'):
 
         fields['page'] += 1
 
-        page_data = json.loads(response.data)
+        page_data = json.loads(response.data.decode('utf-8'))
 
         if 'message' in page_data and page_data['message'] == "Not Found":
             page_data = []
