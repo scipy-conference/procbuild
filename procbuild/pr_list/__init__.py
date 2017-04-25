@@ -26,12 +26,12 @@ def fetch_PRs(user, repo, state='open'):
     data = []
     page_data = True
     
-    url = 'https://api.github.com/repos/{user}s/{repo}s/pulls'.format(**config)
+    url = 'https://api.github.com/repos/{user:s}/{repo:s}/pulls'.format(**config)
     http = urllib3.PoolManager()
 
     while page_data:
-        fetch_status = 'Fetching page %(page)d (state=%(state)s)' % fields + \
-                       ' from %(user)s/%(repo)s...' % config
+        fetch_status = 'Fetching page {page:d} (state={state:s})'.format(**fields) + \
+                       ' from {user:s}/{repo:s}...'.format(**config)
         print(fetch_status)
 
         response = http.request('GET', url, fields=fields,
@@ -43,7 +43,7 @@ def fetch_PRs(user, repo, state='open'):
 
         if 'message' in page_data and page_data['message'] == "Not Found":
             page_data = []
-            print('Warning: Repo not found (%(user)s/%(repo)s)' % config)
+            print('Warning: Repo not found ({user:s}/{repo:s})'.format(**config))
         else:
             data.extend(page_data)
 
