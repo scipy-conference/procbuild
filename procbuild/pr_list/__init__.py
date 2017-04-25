@@ -27,7 +27,7 @@ def fetch_PRs(user, repo, state='open'):
     page_data = True
     
     url = 'https://api.github.com/repos/{user:s}/{repo:s}/pulls'.format(**config)
-    http = urllib3.PoolManager()
+    http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
 
     while page_data:
         fetch_status = 'Fetching page {page:d} (state={state:s})'.format(**fields) + \
