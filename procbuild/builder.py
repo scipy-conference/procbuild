@@ -34,6 +34,16 @@ def error(msg):
     print(msg)
 
 
+def decode_output(f):
+    def wrapped_f(*args, **kwargs):
+        err, out = f(*args, **kwargs)
+        out = out.decode('utf-8')
+        return err, out
+
+    return wrapped_f
+
+
+@decode_output
 def shell(cmd, path=None, retry=0):
     """
     Raises
@@ -41,7 +51,7 @@ def shell(cmd, path=None, retry=0):
     CalledProcessError (has .returncode, .output parameter)
     """
     returncode = 0
-    output = ''
+    output = b''
     for i in range(retry + 1):
         try:
             return 0, subprocess.check_output(shlex.split(cmd), cwd=path,
@@ -50,19 +60,19 @@ def shell(cmd, path=None, retry=0):
             if not isinstance(e.output, list):
                 e.output = [e.output]
             returncode = e.returncode
-            output += '\n'.join(e.output)
+            output += b'\n'.join(e.output)
         except OSError as e:
-            if not 'Resource temporarily unavailable' in e.strerror:
-                return 1, e.strerror + '\n';
+            if not b'Resource temporarily unavailable' in e.strerror:
+                return 1, e.strerror + b'\n';
             else:
-                output += '\n' + e.strerror
+                output += b'\n' + e.strerror
 
         if i < retry:
             delay = random.randint(5, 10)
-            output += '\nRetrying after %ds...\n' % delay
+            output += b'\nRetrying after %ds...\n' % delay
             time.sleep(delay)
 
-    return returncode, output.strip() + '\n'
+    return returncode, output.strip() + b'\n'
 
 
 def checkout(repo, branch, build_path):
