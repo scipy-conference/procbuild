@@ -27,7 +27,7 @@ def fetch_PRs(user, repo, state='open'):
     page_data = True
     
     url = 'https://api.github.com/repos/{user:s}/{repo:s}/pulls'.format(**config)
-    http = urllib3.PoolManager()
+    http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
 
     while page_data:
         fetch_status = 'Fetching page {page:d} (state={state:s})'.format(**fields) + \
@@ -39,7 +39,7 @@ def fetch_PRs(user, repo, state='open'):
 
         fields['page'] += 1
 
-        page_data = json.loads(response.data)
+        page_data = json.loads(response.data.decode('utf-8'))
 
         if 'message' in page_data and page_data['message'] == "Not Found":
             page_data = []

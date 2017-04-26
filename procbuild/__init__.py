@@ -9,9 +9,4 @@ ALLOW_MANUAL_BUILD_TRIGGER = bool(int(os.environ.get(
 
 __all__ = ['app', 'log', 'MASTER_BRANCH', 'papers', 'paper_queue']
 
-
-from .server import app, log, papers, paper_queue
-
-
-
-server.monitor_queue()
+from .server import app, log, papers, paper_queue, monitor_queue
