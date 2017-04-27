@@ -17,8 +17,8 @@ from waitress import serve
 
 print('Monitoring build queue...')
 monitor_queue()
-serve(app, host='0.0.0.0', port=7000)
+serve(app, host='0.0.0.0', port=7001)
 
 # Without waitress, this is the call:
 #
-# app.run(debug=False, host='0.0.0.0', port=7000)
+# app.run(debug=False, host='0.0.0.0', port=7001)
