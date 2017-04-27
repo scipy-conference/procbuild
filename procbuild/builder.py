@@ -1,20 +1,33 @@
-from __future__ import print_function, absolute_import
+from __future__ import print_function, absolute_import, division
 
 import tempfile
 import subprocess
 import shlex
-from glob import glob
 import os
 import shutil
 import json
 import time
 import random
-from os.path import join as joinp
 
-from .futil import age as file_age, base_path
+from os.path import join as joinp
+from datetime import datetime, timedelta
+from glob import glob
 
 excluded = ['vanderwalt','00_vanderwalt','jane_doe','bibderwalt','00_intro']
 
+base_path = os.path.abspath(os.path.dirname(__file__))
+
+def age(fn):
+    """Return the age of file `fn` in minutes.  Return None is the file does
+    not exist.
+    """
+    if not os.path.exists(fn):
+        return None
+
+    modified = datetime.fromtimestamp(os.path.getmtime(fn))
+    delta = datetime.now() - modified
+
+    return delta.seconds / 60
 
 def cache(path='../cache'):
     cache_path = joinp(base_path, path)

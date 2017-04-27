@@ -3,13 +3,12 @@ from __future__ import print_function, absolute_import
 __all__ = ['fetch_PRs', 'update_papers']
 
 import urllib3
-
 import json
 import os
 from os.path import join as joinp
 
-
 from ..builder import cache
+
 pr_list_file = joinp(cache(), 'pr_info.json')
 
 

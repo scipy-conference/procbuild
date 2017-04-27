@@ -15,9 +15,8 @@ from multiprocessing import Process, Queue
 
 from procbuild import MASTER_BRANCH, ALLOW_MANUAL_BUILD_TRIGGER
 
-from .builder import build as build_paper, cache
+from .builder import build as build_paper, cache, file_age, base_path
 from .pr_list import update_papers, pr_list_file
-from .futil import age as file_age, base_path
 
 if not os.path.isfile(pr_list_file):
     update_papers()
