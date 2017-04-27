@@ -15,13 +15,13 @@ from multiprocessing import Process, Queue
 
 from procbuild import MASTER_BRANCH, ALLOW_MANUAL_BUILD_TRIGGER
 
-from .builder import build as build_paper, cache, file_age, base_path
+from .builder import build as build_paper, cache, age as file_age, base_path
 from .pr_list import update_papers, pr_list_file
 
 if not os.path.isfile(pr_list_file):
     update_papers()
 
-with open(pr_list_file) as f:
+with io.open(pr_list_file) as f:
     pr_info = json.load(f)
     papers = [(str(n), pr) for n, pr in enumerate(pr_info)]
 
@@ -63,7 +63,7 @@ def status_from_cache(nr):
                       'data': {'build_output': 'No build info'}}
 
             if os.path.exists(fn):
-                with open(fn, 'r') as f:
+                with io.open(fn, 'r') as f:
                     try:
                         data[n] = json.load(f)
                     except ValueError:
@@ -147,7 +147,7 @@ def _build_worker(nr):
         return
 
     status_log = status_file(nr)
-    with open(status_log, 'w') as f:
+    with io.open(status_log, 'w') as f:
         json.dump({'status': 'fail',
                    'data': {'build_status': 'Building...',
                             'build_output': 'Initializing build...',
@@ -156,7 +156,7 @@ def _build_worker(nr):
 
     def build_and_log(*args, **kwargs):
         status = build_paper(*args, **kwargs)
-        with open(status_log, 'w') as f:
+        with io.open(status_log, 'w') as f:
             json.dump(status, f)
 
     p = Process(target=build_and_log,

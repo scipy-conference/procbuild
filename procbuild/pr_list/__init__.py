@@ -5,6 +5,8 @@ __all__ = ['fetch_PRs', 'update_papers']
 import urllib3
 import json
 import os
+import io
+
 from os.path import join as joinp
 
 from ..builder import cache
@@ -59,6 +61,6 @@ def update_papers():
         pr_info.append({'user': p['head']['user']['login'], 'title': p['title'],
                         'branch': p['head']['ref'], 'url': p['html_url']})
 
-    with open(pr_list_file, 'w') as f:
+    with io.open(pr_list_file, 'w') as f:
         json.dump(pr_info, f)
 
