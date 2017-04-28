@@ -17,7 +17,7 @@ excluded = ['vanderwalt','00_vanderwalt','jane_doe','bibderwalt','00_intro']
 
 base_path = os.path.abspath(os.path.dirname(__file__))
 
-def age(fn):
+def file_age(fn):
     """Return the age of file `fn` in minutes.  Return None is the file does
     not exist.
     """
