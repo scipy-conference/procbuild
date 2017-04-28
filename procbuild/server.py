@@ -13,10 +13,12 @@ from flask import Flask
 
 from multiprocessing import Process, Queue
 
-from procbuild import MASTER_BRANCH, ALLOW_MANUAL_BUILD_TRIGGER
-
 from .builder import build as build_paper, cache, file_age, base_path
 from .pr_list import update_papers, pr_list_file
+
+MASTER_BRANCH = os.environ.get('MASTER_BRANCH', '2017')
+ALLOW_MANUAL_BUILD_TRIGGER = bool(int(os.environ.get(
+    'ALLOW_MANUAL_BUILD_TRIGGER', 1)))
 
 if not os.path.isfile(pr_list_file):
     update_papers()
