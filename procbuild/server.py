@@ -30,15 +30,17 @@ app = Flask(__name__)
 print("Setting up build queue...")
 
 paper_queue_size = 0
-paper_queue = {0:Queue(), 1:paper_queue_size}
+paper_queue = {0: Queue(), 1: paper_queue_size}
 
 logfile = io.open(joinp(os.path.dirname(__file__), '../flask.log'), 'w')
+
 
 def log(message):
     print(message)
     logfile.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + " " +
                   message + '\n')
     logfile.flush()
+
 
 def status_file(nr):
     return joinp(cache(), str(nr) + '.status')
@@ -103,6 +105,7 @@ def _process_queue(queue):
             log("Queue yielded paper #%d." % nr)
             _build_worker(nr)
 
+
 def monitor_queue():
     print("Launching queue monitoring process...")
     p = Process(target=_process_queue, kwargs=dict(queue=paper_queue[0]))
@@ -110,7 +113,8 @@ def monitor_queue():
 
 
 def dummy_build(nr):
-        return jsonify({'status': 'fail', 'message': 'Not authorized'})
+    return jsonify({'status': 'fail', 'message': 'Not authorized'})
+
 
 def real_build(nr):
     try:
@@ -156,7 +160,6 @@ def _build_worker(nr):
                    'data': {'build_status': 'Building...',
                             'build_output': 'Initializing build...',
                             'build_timestamp': ''}}, f)
-
 
     def build_and_log(*args, **kwargs):
         status = build_paper(*args, **kwargs)
