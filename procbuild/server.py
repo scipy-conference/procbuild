@@ -28,10 +28,12 @@ with io.open(pr_list_file) as f:
 app = Flask(__name__)
 
 print("Setting up build queue...")
+
 paper_queue_size = 0
 paper_queue = {0:Queue(), 1:paper_queue_size}
 
 logfile = io.open(joinp(os.path.dirname(__file__), '../flask.log'), 'w')
+
 def log(message):
     print(message)
     logfile.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + " " +
@@ -79,6 +81,7 @@ def status_from_cache(nr):
 @app.route('/')
 def index():
     prs_age = file_age(pr_list_file)
+    # if it's never been built or is over an hour old, update_papers
     if (prs_age is None or prs_age > 60):
         log("Updating papers...")
         update_papers()
@@ -142,7 +145,8 @@ def _build_worker(nr):
     pr = pr_info[int(nr)]
 
     age = file_age(status_file(nr))
-    if not (age is None or age > 2):
+    min_wait = 0.5 
+    if not (age is None or age > min_wait):
         log("Did not build paper %d--recently built." % nr)
         return
 
