@@ -1,10 +1,10 @@
-from __future__ import print_function, absolute_import 
+from __future__ import print_function, absolute_import
 
 from flask import (render_template, url_for, send_file, jsonify,
                    request, Flask)
 import json
 import os
-import io 
+import io
 import time
 
 from os.path import join as joinp
@@ -145,7 +145,7 @@ def _build_worker(nr):
     pr = pr_info[int(nr)]
 
     age = file_age(status_file(nr))
-    min_wait = 0.5 
+    min_wait = 0.5
     if not (age is None or age > min_wait):
         log("Did not build paper %d--recently built." % nr)
         return
