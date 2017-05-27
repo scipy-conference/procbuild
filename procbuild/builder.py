@@ -1,19 +1,34 @@
-from __future__ import print_function, absolute_import
+from __future__ import print_function, absolute_import, division
 
 import tempfile
 import subprocess
 import shlex
-from glob import glob
 import os
 import shutil
 import json
 import time
 import random
+
 from os.path import join as joinp
+from datetime import datetime, timedelta
+from glob import glob
 
-from .futil import age as file_age, base_path
+excluded = ['vanderwalt', '00_vanderwalt', 'jane_doe', 'bibderwalt', '00_intro']
 
-excluded = ['vanderwalt','00_vanderwalt','jane_doe','bibderwalt','00_intro']
+base_path = os.path.abspath(os.path.dirname(__file__))
+
+
+def file_age(fn):
+    """Return the age of file `fn` in minutes.  Return None is the file does
+    not exist.
+    """
+    if not os.path.exists(fn):
+        return None
+
+    modified = datetime.fromtimestamp(os.path.getmtime(fn))
+    delta = datetime.now() - modified
+
+    return delta.seconds / 60
 
 
 def cache(path='../cache'):
@@ -62,8 +77,8 @@ def shell(cmd, path=None, retry=0):
             returncode = e.returncode
             output += b'\n'.join(e.output)
         except OSError as e:
-            if not b'Resource temporarily unavailable' in e.strerror:
-                return 1, e.strerror + b'\n';
+            if b'Resource temporarily unavailable' not in e.strerror:
+                return 1, e.strerror + b'\n'
             else:
                 output += b'\n' + e.strerror
 
@@ -76,7 +91,7 @@ def shell(cmd, path=None, retry=0):
 
 
 def checkout(repo, branch, build_path):
-    return shell('git clone %s --branch %s --single-branch %s' % \
+    return shell('git clone %s --branch %s --single-branch %s' %
                  (repo, branch, build_path), retry=4)
 
 
@@ -93,7 +108,6 @@ def build(user, branch, target, master_branch='master', log=None):
     build_path = tempfile.mkdtemp()
     master_repo_path = joinp(cache(), 'scipy_proceedings')
     target_path = joinp(cache(), '%s.pdf' % target)
-
 
     if not os.path.exists(master_repo_path):
         add_output('[*] Checking out proceedings build tools '

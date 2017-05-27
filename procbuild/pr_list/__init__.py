@@ -1,15 +1,16 @@
 from __future__ import print_function, absolute_import
 
-__all__ = ['fetch_PRs', 'update_papers']
-
 import urllib3
-
 import json
 import os
+import io
+
 from os.path import join as joinp
 
-
 from ..builder import cache
+
+__all__ = ['fetch_PRs', 'update_papers']
+
 pr_list_file = joinp(cache(), 'pr_info.json')
 
 
@@ -25,7 +26,7 @@ def fetch_PRs(user, repo, state='open'):
 
     data = []
     page_data = True
-    
+
     url = 'https://api.github.com/repos/{user:s}/{repo:s}/pulls'.format(**config)
     http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
 
@@ -60,6 +61,5 @@ def update_papers():
         pr_info.append({'user': p['head']['user']['login'], 'title': p['title'],
                         'branch': p['head']['ref'], 'url': p['html_url']})
 
-    with open(pr_list_file, 'w') as f:
+    with io.open(pr_list_file, 'w') as f:
         json.dump(pr_info, f)
-

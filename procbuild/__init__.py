@@ -1,12 +1,10 @@
 from __future__ import print_function, absolute_import
-# --- Customize these variables ---
-import os
-MASTER_BRANCH = os.environ.get('MASTER_BRANCH', '2016')
-ALLOW_MANUAL_BUILD_TRIGGER = bool(int(os.environ.get(
-    'ALLOW_MANUAL_BUILD_TRIGGER', 1)))
 
-# ---
+import os
+
+from .server import (app, log, papers, paper_queue, monitor_queue,
+    MASTER_BRANCH, ALLOW_MANUAL_BUILD_TRIGGER)
+
+# --- Customize these variables ---
 
 __all__ = ['app', 'log', 'MASTER_BRANCH', 'papers', 'paper_queue']
-
-from .server import app, log, papers, paper_queue, monitor_queue

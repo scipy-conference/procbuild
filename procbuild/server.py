@@ -1,10 +1,10 @@
-from __future__ import print_function, absolute_import 
+from __future__ import print_function, absolute_import
 
 from flask import (render_template, url_for, send_file, jsonify,
                    request, Flask)
 import json
 import os
-import io 
+import io
 import time
 
 from os.path import join as joinp
@@ -13,31 +13,36 @@ from flask import Flask
 
 from multiprocessing import Process, Queue
 
-from procbuild import MASTER_BRANCH, ALLOW_MANUAL_BUILD_TRIGGER
-
-from .builder import build as build_paper, cache
+from .builder import build as build_paper, cache, file_age, base_path
 from .pr_list import update_papers, pr_list_file
-from .futil import age as file_age, base_path
+
+MASTER_BRANCH = os.environ.get('MASTER_BRANCH', '2017')
+ALLOW_MANUAL_BUILD_TRIGGER = bool(int(os.environ.get(
+    'ALLOW_MANUAL_BUILD_TRIGGER', 1)))
 
 if not os.path.isfile(pr_list_file):
     update_papers()
 
-with open(pr_list_file) as f:
+with io.open(pr_list_file) as f:
     pr_info = json.load(f)
     papers = [(str(n), pr) for n, pr in enumerate(pr_info)]
 
 app = Flask(__name__)
 
 print("Setting up build queue...")
+
 paper_queue_size = 0
-paper_queue = {0:Queue(), 1:paper_queue_size}
+paper_queue = {0: Queue(), 1: paper_queue_size}
 
 logfile = io.open(joinp(os.path.dirname(__file__), '../flask.log'), 'w')
+
+
 def log(message):
     print(message)
     logfile.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + " " +
                   message + '\n')
     logfile.flush()
+
 
 def status_file(nr):
     return joinp(cache(), str(nr) + '.status')
@@ -64,7 +69,7 @@ def status_from_cache(nr):
                       'data': {'build_output': 'No build info'}}
 
             if os.path.exists(fn):
-                with open(fn, 'r') as f:
+                with io.open(fn, 'r') as f:
                     try:
                         data[n] = json.load(f)
                     except ValueError:
@@ -80,6 +85,7 @@ def status_from_cache(nr):
 @app.route('/')
 def index():
     prs_age = file_age(pr_list_file)
+    # if it's never been built or is over an hour old, update_papers
     if (prs_age is None or prs_age > 60):
         log("Updating papers...")
         update_papers()
@@ -101,6 +107,7 @@ def _process_queue(queue):
             log("Queue yielded paper #%d." % nr)
             _build_worker(nr)
 
+
 def monitor_queue():
     print("Launching queue monitoring process...")
     p = Process(target=_process_queue, kwargs=dict(queue=paper_queue[0]))
@@ -108,7 +115,8 @@ def monitor_queue():
 
 
 def dummy_build(nr):
-        return jsonify({'status': 'fail', 'message': 'Not authorized'})
+    return jsonify({'status': 'fail', 'message': 'Not authorized'})
+
 
 def real_build(nr):
     try:
@@ -143,21 +151,21 @@ def _build_worker(nr):
     pr = pr_info[int(nr)]
 
     age = file_age(status_file(nr))
-    if not (age is None or age > 2):
+    min_wait = 0.5
+    if not (age is None or age > min_wait):
         log("Did not build paper %d--recently built." % nr)
         return
 
     status_log = status_file(nr)
-    with open(status_log, 'w') as f:
+    with io.open(status_log, 'w') as f:
         json.dump({'status': 'fail',
                    'data': {'build_status': 'Building...',
                             'build_output': 'Initializing build...',
                             'build_timestamp': ''}}, f)
 
-
     def build_and_log(*args, **kwargs):
         status = build_paper(*args, **kwargs)
-        with open(status_log, 'w') as f:
+        with io.open(status_log, 'w') as f:
             json.dump(status, f)
 
     p = Process(target=build_and_log,
