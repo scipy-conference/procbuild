@@ -6,6 +6,7 @@ import json
 import os
 import io
 import time
+import inspect 
 
 from os.path import join as joinp
 from datetime import datetime, timedelta
@@ -21,7 +22,6 @@ MASTER_BRANCH = os.environ.get('MASTER_BRANCH', '2017')
 ALLOW_MANUAL_BUILD_TRIGGER = bool(int(os.environ.get(
     'ALLOW_MANUAL_BUILD_TRIGGER', 1)))
 
-logfile = io.open(joinp(os.path.dirname(__file__), '../flask.log'), 'w')
 
 def get_pr_info():
     with io.open(pr_list_file) as f:
@@ -56,9 +56,12 @@ def file_age(fn):
 
 def log(message):
     print(message)
-    logfile.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + " " +
-                  message + '\n')
-    logfile.flush()
+    with io.open(joinp(os.path.dirname(__file__), '../flask.log'), 'w') as f:
+        time_of_message = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) 
+        cf = inspect.currentframe().f_back
+        where = '{}:{}'.format(cf.f_code.co_filename, cf.f_lineno)
+        f.write(" ".join([time_of_message, where, message, '\n']))
+        f.flush()
 
 
 def status_file(nr):
@@ -241,11 +244,20 @@ def download(nr):
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
-        import pdb; pdb.set_trace()
-        data = json.loads(request.data)
-    except:
+        data = json.loads(request.data.decode('utf-8'))
+    except TypeError as e:
+        log(e)
         return jsonify({'status': 'fail',
-                        'message': 'Invalid JSON data'})
+                        'message': 'Invalid data type when decoded'})
+    except json.JSONDecodeError as e:
+        log(e)
+        return jsonify({'status': 'fail',
+                        'message': 'Data is not valid JSON format'})
+    except Exception as e:
+        log(e)
+        return jsonify({'status': 'fail',
+                        'message': 'unknown error'})
+
 
     papers = get_papers()
     pr_url = data.get('pull_request', {}).get('html_url', '')
