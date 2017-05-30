@@ -8,12 +8,13 @@ import io
 import time
 
 from os.path import join as joinp
+from datetime import datetime, timedelta
 from glob import glob
 from flask import Flask
 
 from multiprocessing import Process, Queue
 
-from .builder import build as build_paper, cache, file_age, base_path
+from .builder import build as build_paper, cache, base_path
 from .pr_list import update_papers, pr_list_file
 
 MASTER_BRANCH = os.environ.get('MASTER_BRANCH', '2017')
@@ -23,9 +24,15 @@ ALLOW_MANUAL_BUILD_TRIGGER = bool(int(os.environ.get(
 if not os.path.isfile(pr_list_file):
     update_papers()
 
-with io.open(pr_list_file) as f:
-    pr_info = json.load(f)
-    papers = [(str(n), pr) for n, pr in enumerate(pr_info)]
+
+def get_papers():
+    with io.open(pr_list_file) as f:
+        pr_info = json.load(f)
+        papers = [(str(n), pr) for n, pr in enumerate(pr_info)]
+    return pr_info, papers
+
+pr_info, papers = get_papers()
+
 
 app = Flask(__name__)
 
@@ -35,6 +42,19 @@ paper_queue_size = 0
 paper_queue = {0: Queue(), 1: paper_queue_size}
 
 logfile = io.open(joinp(os.path.dirname(__file__), '../flask.log'), 'w')
+
+
+def file_age(fn):
+    """Return the age of file `fn` in minutes.  Return None is the file does
+    not exist.
+    """
+    if not os.path.exists(fn):
+        return None
+
+    modified = datetime.fromtimestamp(os.path.getmtime(fn))
+    delta = datetime.now() - modified
+
+    return delta.seconds / 60
 
 
 def log(message):
@@ -86,7 +106,7 @@ def status_from_cache(nr):
 def index():
     prs_age = file_age(pr_list_file)
     # if it's never been built or is over an hour old, update_papers
-    if (prs_age is None or prs_age > 60):
+    if (prs_age is None or prs_age > .1):
         log("Updating papers...")
         update_papers()
 
@@ -149,7 +169,6 @@ def build(*args, **kwarg):
 
 def _build_worker(nr):
     pr = pr_info[int(nr)]
-
     age = file_age(status_file(nr))
     min_wait = 0.5
     if not (age is None or age > min_wait):
@@ -188,6 +207,10 @@ def _build_worker(nr):
     p.join()
     k.terminate()
 
+@app.route('/build_queue_size')
+def print_build_queue(nr=None):
+
+    return jsonify(paper_queue[1])
 
 @app.route('/status')
 @app.route('/status/<nr>')
