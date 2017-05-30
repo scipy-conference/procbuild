@@ -21,27 +21,24 @@ MASTER_BRANCH = os.environ.get('MASTER_BRANCH', '2017')
 ALLOW_MANUAL_BUILD_TRIGGER = bool(int(os.environ.get(
     'ALLOW_MANUAL_BUILD_TRIGGER', 1)))
 
-if not os.path.isfile(pr_list_file):
-    update_papers()
+logfile = io.open(joinp(os.path.dirname(__file__), '../flask.log'), 'w')
+
+def get_pr_info():
+    with io.open(pr_list_file) as f:
+        pr_info = json.load(f)
+    return pr_info
 
 
 def get_papers():
-    with io.open(pr_list_file) as f:
-        pr_info = json.load(f)
-        papers = [(str(n), pr) for n, pr in enumerate(pr_info)]
-    return pr_info, papers
-
-pr_info, papers = get_papers()
+    return [(str(n), pr) for n, pr in enumerate(get_pr_info())]
 
 
-app = Flask(__name__)
-
-print("Setting up build queue...")
-
-paper_queue_size = 0
-paper_queue = {0: Queue(), 1: paper_queue_size}
-
-logfile = io.open(joinp(os.path.dirname(__file__), '../flask.log'), 'w')
+def outdated_pr_list(expiry=1):
+    if not os.path.isfile(pr_list_file):
+        update_papers()
+    elif file_age(pr_list_file) > expiry:
+        log("Updating papers...")
+        update_papers()
 
 
 def file_age(fn):
@@ -69,6 +66,7 @@ def status_file(nr):
 
 
 def status_from_cache(nr):
+    papers = get_papers()
     if nr == '*':
         status_files = [status_file(i) for i in range(len(papers))]
     else:
@@ -102,13 +100,20 @@ def status_from_cache(nr):
         return data
 
 
+outdated_pr_list()
+
+app = Flask(__name__)
+print("Setting up build queue...")
+
+paper_queue_size = 0
+paper_queue = {0: Queue(), 1: paper_queue_size}
+
+
 @app.route('/')
 def index():
-    prs_age = file_age(pr_list_file)
-    # if it's never been built or is over an hour old, update_papers
-    if (prs_age is None or prs_age > .1):
-        log("Updating papers...")
-        update_papers()
+    # if it's never been built or is over 1 minute old, update_papers
+    outdated_pr_list(expiry=1)
+    papers = get_papers()
 
     return render_template('index.html', papers=papers,
                            build_url=url_for('build', nr=''),
@@ -236,11 +241,13 @@ def download(nr):
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
+        import pdb; pdb.set_trace()
         data = json.loads(request.data)
     except:
         return jsonify({'status': 'fail',
                         'message': 'Invalid JSON data'})
 
+    papers = get_papers()
     pr_url = data.get('pull_request', {}).get('html_url', '')
     paper = [p for p, info in papers if info['url'] == pr_url]
 
@@ -250,3 +257,4 @@ def webhook():
         return jsonify({'status': 'fail',
                         'message': 'Hook called for building '
                                    'non-existing paper (%s)' % pr_url})
+

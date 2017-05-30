@@ -2,3 +2,5 @@
 *~
 flask.log
 cache
+*.swp
+*.un~
