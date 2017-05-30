@@ -147,6 +147,7 @@ def dummy_build(nr):
 
 
 def real_build(nr):
+    pr_info = get_pr_info()
     try:
         pr = pr_info[int(nr)]
     except:
@@ -176,6 +177,7 @@ def build(*args, **kwarg):
 
 
 def _build_worker(nr):
+    pr_info = get_pr_info()
     pr = pr_info[int(nr)]
     age = file_age(status_file(nr))
     min_wait = 0.5
