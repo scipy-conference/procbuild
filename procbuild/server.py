@@ -56,7 +56,7 @@ def file_age(fn):
 
 def log(message):
     print(message)
-    with io.open(joinp(os.path.dirname(__file__), '../flask.log'), 'w') as f:
+    with io.open(joinp(os.path.dirname(__file__), '../flask.log'), 'a') as f:
         time_of_message = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) 
         cf = inspect.currentframe().f_back
         where = '{}:{}'.format(cf.f_code.co_filename, cf.f_lineno)
