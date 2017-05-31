@@ -1,4 +1,4 @@
-from __future__ import print_function, absolute_import
+from __future__ import print_function, absolute_import, unicode_literals
 
 from flask import (render_template, url_for, send_file, jsonify,
                    request, Flask)
@@ -7,6 +7,7 @@ import os
 import io
 import time
 import inspect 
+import codecs
 
 from os.path import join as joinp
 from datetime import datetime, timedelta
@@ -186,16 +187,18 @@ def _build_worker(nr):
         return
 
     status_log = status_file(nr)
-    with io.open(status_log, 'w') as f:
-        json.dump({'status': 'fail',
-                   'data': {'build_status': 'Building...',
-                            'build_output': 'Initializing build...',
-                            'build_timestamp': ''}}, f)
+    with io.open(status_log, 'wb') as f:
+        build_record = {'status': 'fail',
+                        'data': {'build_status': 'Building...',
+                                 'build_output': 'Initializing build...',
+                                 'build_timestamp': ''}}
+        json.dump(build_record, codecs.getwriter('utf-8')(f), ensure_ascii=False)
+
 
     def build_and_log(*args, **kwargs):
         status = build_paper(*args, **kwargs)
-        with io.open(status_log, 'w') as f:
-            json.dump(status, f)
+        with io.open(status_log, 'wb') as f:
+            json.dump(status, codecs.getwriter('utf-8')(f), ensure_ascii=False)
 
     p = Process(target=build_and_log,
                 kwargs=dict(user=pr['user'], branch=pr['branch'],

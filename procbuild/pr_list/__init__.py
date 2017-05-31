@@ -4,6 +4,7 @@ import urllib3
 import json
 import os
 import io
+import codecs
 
 from os.path import join as joinp
 
@@ -61,5 +62,5 @@ def update_papers():
         pr_info.append({'user': p['head']['user']['login'], 'title': p['title'],
                         'branch': p['head']['ref'], 'url': p['html_url']})
 
-    with io.open(pr_list_file, 'w') as f:
-        json.dump(pr_info, f)
+    with io.open(pr_list_file, 'wb') as f:
+        json.dump(pr_info, codecs.getwriter('utf-8')(f), ensure_ascii=False)
