@@ -1,4 +1,4 @@
-from __future__ import print_function, absolute_import
+from __future__ import print_function, absolute_import, unicode_literals
 
 from flask import (render_template, url_for, send_file, jsonify,
                    request, Flask)
@@ -6,42 +6,63 @@ import json
 import os
 import io
 import time
+import inspect 
+import codecs
 
 from os.path import join as joinp
+from datetime import datetime, timedelta
 from glob import glob
 from flask import Flask
 
 from multiprocessing import Process, Queue
 
-from .builder import build as build_paper, cache, file_age, base_path
+from .builder import build as build_paper, cache, base_path
 from .pr_list import update_papers, pr_list_file
 
 MASTER_BRANCH = os.environ.get('MASTER_BRANCH', '2017')
 ALLOW_MANUAL_BUILD_TRIGGER = bool(int(os.environ.get(
     'ALLOW_MANUAL_BUILD_TRIGGER', 1)))
 
-if not os.path.isfile(pr_list_file):
-    update_papers()
 
-with io.open(pr_list_file) as f:
-    pr_info = json.load(f)
-    papers = [(str(n), pr) for n, pr in enumerate(pr_info)]
+def get_pr_info():
+    with io.open(pr_list_file) as f:
+        pr_info = json.load(f)
+    return pr_info
 
-app = Flask(__name__)
 
-print("Setting up build queue...")
+def get_papers():
+    return [(str(n), pr) for n, pr in enumerate(get_pr_info())]
 
-paper_queue_size = 0
-paper_queue = {0: Queue(), 1: paper_queue_size}
 
-logfile = io.open(joinp(os.path.dirname(__file__), '../flask.log'), 'w')
+def outdated_pr_list(expiry=1):
+    if not os.path.isfile(pr_list_file):
+        update_papers()
+    elif file_age(pr_list_file) > expiry:
+        log("Updating papers...")
+        update_papers()
+
+
+def file_age(fn):
+    """Return the age of file `fn` in minutes.  Return None is the file does
+    not exist.
+    """
+    if not os.path.exists(fn):
+        return None
+
+    modified = datetime.fromtimestamp(os.path.getmtime(fn))
+    delta = datetime.now() - modified
+
+    return delta.seconds / 60
 
 
 def log(message):
     print(message)
-    logfile.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + " " +
-                  message + '\n')
-    logfile.flush()
+    with io.open(joinp(os.path.dirname(__file__), '../flask.log'), 'a') as f:
+        time_of_message = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) 
+        cf = inspect.currentframe().f_back
+        where = '{}:{}'.format(cf.f_code.co_filename, cf.f_lineno)
+        f.write(" ".join([time_of_message, where, message, '\n']))
+        f.flush()
 
 
 def status_file(nr):
@@ -49,6 +70,7 @@ def status_file(nr):
 
 
 def status_from_cache(nr):
+    papers = get_papers()
     if nr == '*':
         status_files = [status_file(i) for i in range(len(papers))]
     else:
@@ -82,13 +104,20 @@ def status_from_cache(nr):
         return data
 
 
+outdated_pr_list()
+
+app = Flask(__name__)
+print("Setting up build queue...")
+
+paper_queue_size = 0
+paper_queue = {0: Queue(), 1: paper_queue_size}
+
+
 @app.route('/')
 def index():
-    prs_age = file_age(pr_list_file)
-    # if it's never been built or is over an hour old, update_papers
-    if (prs_age is None or prs_age > 60):
-        log("Updating papers...")
-        update_papers()
+    # if it's never been built or is over 1 minute old, update_papers
+    outdated_pr_list(expiry=1)
+    papers = get_papers()
 
     return render_template('index.html', papers=papers,
                            build_url=url_for('build', nr=''),
@@ -119,6 +148,7 @@ def dummy_build(nr):
 
 
 def real_build(nr):
+    pr_info = get_pr_info()
     try:
         pr = pr_info[int(nr)]
     except:
@@ -148,8 +178,8 @@ def build(*args, **kwarg):
 
 
 def _build_worker(nr):
+    pr_info = get_pr_info()
     pr = pr_info[int(nr)]
-
     age = file_age(status_file(nr))
     min_wait = 0.5
     if not (age is None or age > min_wait):
@@ -157,16 +187,18 @@ def _build_worker(nr):
         return
 
     status_log = status_file(nr)
-    with io.open(status_log, 'w') as f:
-        json.dump({'status': 'fail',
-                   'data': {'build_status': 'Building...',
-                            'build_output': 'Initializing build...',
-                            'build_timestamp': ''}}, f)
+    with io.open(status_log, 'wb') as f:
+        build_record = {'status': 'fail',
+                        'data': {'build_status': 'Building...',
+                                 'build_output': 'Initializing build...',
+                                 'build_timestamp': ''}}
+        json.dump(build_record, codecs.getwriter('utf-8')(f), ensure_ascii=False)
+
 
     def build_and_log(*args, **kwargs):
         status = build_paper(*args, **kwargs)
-        with io.open(status_log, 'w') as f:
-            json.dump(status, f)
+        with io.open(status_log, 'wb') as f:
+            json.dump(status, codecs.getwriter('utf-8')(f), ensure_ascii=False)
 
     p = Process(target=build_and_log,
                 kwargs=dict(user=pr['user'], branch=pr['branch'],
@@ -188,6 +220,10 @@ def _build_worker(nr):
     p.join()
     k.terminate()
 
+@app.route('/build_queue_size')
+def print_build_queue(nr=None):
+
+    return jsonify(paper_queue[1])
 
 @app.route('/status')
 @app.route('/status/<nr>')
@@ -213,11 +249,22 @@ def download(nr):
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
-        data = json.loads(request.data)
-    except:
+        data = json.loads(request.data.decode('utf-8'))
+    except TypeError as e:
+        log(e)
         return jsonify({'status': 'fail',
-                        'message': 'Invalid JSON data'})
+                        'message': 'Invalid data type when decoded'})
+    except json.JSONDecodeError as e:
+        log(e)
+        return jsonify({'status': 'fail',
+                        'message': 'Data is not valid JSON format'})
+    except Exception as e:
+        log(e)
+        return jsonify({'status': 'fail',
+                        'message': 'unknown error'})
 
+
+    papers = get_papers()
     pr_url = data.get('pull_request', {}).get('html_url', '')
     paper = [p for p, info in papers if info['url'] == pr_url]
 
@@ -227,3 +274,4 @@ def webhook():
         return jsonify({'status': 'fail',
                         'message': 'Hook called for building '
                                    'non-existing paper (%s)' % pr_url})
+
