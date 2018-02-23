@@ -9,7 +9,7 @@
 - Fetch PRs by running `./update_prs`
 - Launch by running `runserver.py`
 
-Note: the server has not been ported to Python 3 yet.
+Note: the server should run on both Python 2 and 3.
 
 You need all the same dependencies as for building the proceedings as well:
 
