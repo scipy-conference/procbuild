@@ -1,5 +1,22 @@
 # SciPy Proceedings Builder
 
+## Quickstart: Docker Container
+
+If you already have docker engine setup, you should be able to run a version of the proceedings server by running 
+
+```bash
+docker run -it -p 7001:7001 mpacer/procbuild
+```
+
+Then, if you go to localhost:7001, you should see the server interface, and you
+can manually trigger builds by clicking the button on the right hand side.
+
+This will occupy the terminal, when you want to shut down the server and stop
+running the image you will need to type <kbd>ctrl</kbd><kbd>C</kbd>. This should
+shutdown the server and stop running the image (if you used the above command). 
+
+## General notes
+
 - Customize `runserver.py` to update this year's branch.
   For debugging, enable ``ALLOW_MANUAL_BUILD_TRIGGER``.
 - In the `scipy-conference/scipy_proceedings` repo: in the webhooks add a payload 
