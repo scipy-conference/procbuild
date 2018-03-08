@@ -5,7 +5,7 @@
 If you already have docker engine setup, you should be able to run a version of the proceedings server by running 
 
 ```bash
-docker run -it -p 7001:7001 mpacer/procbuild
+docker run -it -p 7001:7001 scipyproc/procbuild
 ```
 
 Then, if you go to localhost:7001, you should see the server interface, and you
