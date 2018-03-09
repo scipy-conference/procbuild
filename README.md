@@ -13,7 +13,21 @@ can manually trigger builds by clicking the button on the right hand side.
 
 This will occupy the terminal, when you want to shut down the server and stop
 running the image you will need to type <kbd>ctrl</kbd><kbd>C</kbd>. This should
-shutdown the server and stop running the image (if you used the above command). 
+shutdown the server and stop running the image.
+
+## Building the Docker image
+
+If you want to build the Docker image from the Dockerfile contained here you should run:
+
+```bash
+docker build -t yourname/procbuild .
+```
+
+which will create a docker image in your local repository that you can run with:
+
+```bash
+docker run -it -p 7001:7001 yourname/procbuild
+```
 
 ## General notes
 
