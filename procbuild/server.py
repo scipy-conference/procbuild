@@ -104,8 +104,6 @@ def status_from_cache(nr):
         return data
 
 
-outdated_pr_list()
-
 app = Flask(__name__)
 print("Setting up build queue...")
 
@@ -116,7 +114,7 @@ paper_queue = {0: Queue(), 1: paper_queue_size}
 @app.route('/')
 def index():
     # if it's never been built or is over 1 minute old, update_papers
-    outdated_pr_list(expiry=1)
+    outdated_pr_list(expiry=5)
     papers = get_papers()
 
     return render_template('index.html', papers=papers,
