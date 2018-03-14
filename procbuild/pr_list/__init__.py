@@ -18,10 +18,13 @@ pr_list_file = joinp(cache(), 'pr_info.json')
 def fetch_PRs(user, repo, state='open'):
     """This command fetches PR information based on the passed in parameters.
     
-    It will always request one more time than is necessary 
+    It specifies how many responses are expected per page, and so if we ever
+    receive fewer than that number of responses, we know that there are no more.
     """
+    responses_per_page = 100
+    
     fields = {'state': state,
-              'per_page': 100,
+              'per_page': responses_per_page,
               'page': 1}
 
     config = {'user': user,
@@ -30,12 +33,12 @@ def fetch_PRs(user, repo, state='open'):
     config.update(fields)
 
     data = []
-    page_data = True
+    page_data = []
 
     url = 'https://api.github.com/repos/{user:s}/{repo:s}/pulls'.format(**config)
     http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
 
-    while page_data:
+    while len(data)==0 or len(page_data) == responses_per_page:
         fetch_status = 'Fetching page {page:d} (state={state:s})'.format(**fields) + \
                        ' from {user:s}/{repo:s}...'.format(**config)
         print(fetch_status)
@@ -48,8 +51,8 @@ def fetch_PRs(user, repo, state='open'):
         page_data = json.loads(response.data.decode('utf-8'))
 
         if 'message' in page_data and page_data['message'] == "Not Found":
-            page_data = []
             print('Warning: Repo not found ({user:s}/{repo:s})'.format(**config))
+            break
         else:
             data.extend(page_data)
 
