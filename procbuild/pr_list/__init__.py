@@ -38,7 +38,7 @@ def fetch_PRs(user, repo, state='open'):
     url = 'https://api.github.com/repos/{user:s}/{repo:s}/pulls'.format(**config)
     http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
 
-    while len(data)==0 or len(page_data) == responses_per_page:
+    while len(data) == 0 or len(page_data) == responses_per_page:
         fetch_status = 'Fetching page {page:d} (state={state:s})'.format(**fields) + \
                        ' from {user:s}/{repo:s}...'.format(**config)
         print(fetch_status)
@@ -52,6 +52,9 @@ def fetch_PRs(user, repo, state='open'):
 
         if 'message' in page_data and page_data['message'] == "Not Found":
             print('Warning: Repo not found ({user:s}/{repo:s})'.format(**config))
+            break
+        elif len(page_data) == 0:
+            print('No PRs on ({user:s}/{repo:s})'.format(**config))
             break
         else:
             data.extend(page_data)
