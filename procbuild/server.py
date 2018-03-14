@@ -6,20 +6,34 @@ import json
 import os
 import io
 import time
-import inspect 
+import inspect
 import codecs
 
 from os.path import join as joinp
 from glob import glob
 from flask import Flask
 
-from multiprocessing import Process, Queue
+import subprocess
+
+import zmq
+import random
+import json
+
+from .message_proxy import IN
 
 
 from . import ALLOW_MANUAL_BUILD_TRIGGER, MASTER_BRANCH 
 from .builder import BuildManager, cache, base_path
 from .pr_list import outdated_pr_list, get_papers, get_pr_info
 from .utils import file_age, status_file, log
+
+
+print("Connecting to message bus")
+ctx = zmq.Context()
+socket = ctx.socket(zmq.PUSH)
+socket.connect(IN)
+
+
 
 
 def status_from_cache(nr):
@@ -58,11 +72,8 @@ def status_from_cache(nr):
 
 
 app = Flask(__name__)
-print("Setting up build queue...")
-
-paper_queue_size = 0
-paper_queue = {0: Queue(), 1: paper_queue_size}
-
+print("Starting up build queue...")
+subprocess.Popen(['python', '-m', 'procbuild.message_proxy'])
 
 @app.route('/')
 def index():
@@ -76,23 +87,24 @@ def index():
                            allow_manual_build_trigger=ALLOW_MANUAL_BUILD_TRIGGER)
 
 
-def _process_queue(queue):
-    done = False
-    while not done:
-        nr = queue.get()
-        if nr is None:
-            log("Sentinel found in queue. Ending queue monitor.")
-            done = True
-        else:
-            log("Queue yielded paper #%d." % nr)
-            _build_worker(nr)
+# TODO: MOVE THIS TO THE LISTENER
+#
+# def _process_queue(queue):
+#     done = False
+#     while not done:
+#         nr = queue.get()
+#         if nr is None:
+#             log("Sentinel found in queue. Ending queue monitor.")
+#             done = True
+#         else:
+#             log("Queue yielded paper #%d." % nr)
+#             _build_worker(nr)
 
 
 def monitor_queue():
-    print("Launching queue monitoring process...")
-    p = Process(target=_process_queue, kwargs=dict(queue=paper_queue[0]))
-    p.start()
-
+    print("Launching queue monitoring...")
+    ## TODO: Add logging to this subprocess
+    subprocess.Popen(['python', '-m', 'procbuild.test_listen'])
 
 def dummy_build(nr):
     return jsonify({'status': 'fail', 'message': 'Not authorized'})
@@ -106,12 +118,19 @@ def real_build(nr):
         return jsonify({'status': 'fail',
                         'message': 'Invalid paper specified'})
 
-    if paper_queue[1] >= 50:
-        return jsonify({'status': 'fail',
-                        'message': 'Build queue is currently full.'})
+## TODO: Move check to the listener
+#
+#    if paper_queue[1] >= 50:
+#        return jsonify({'status': 'fail',
+#                        'message': 'Build queue is currently full.'})
 
-    paper_queue[0].put(int(nr))
-    paper_queue[1] += 1
+    message = ['build_queue', json.dumps({'build_paper': nr})]
+
+    # TODO: remove after debugging
+    print('Submitting:', message)
+
+    # TODO: Error checking around this send?
+    socket.send_multipart([m.encode('utf-8') for m in message])
 
     return jsonify({'status': 'success',
                     'data': {'info': 'Build for paper %s scheduled.  Note that '
@@ -173,10 +192,10 @@ def _build_worker(nr):
     p.join()
     k.terminate()
 
-@app.route('/build_queue_size')
-def print_build_queue(nr=None):
-
-    return jsonify(paper_queue[1])
+#@app.route('/build_queue_size')
+#def print_build_queue(nr=None):
+#
+#    return jsonify(paper_queue[1])
 
 @app.route('/status')
 @app.route('/status/<nr>')

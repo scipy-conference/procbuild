@@ -14,4 +14,4 @@ ALLOW_MANUAL_BUILD_TRIGGER = bool(int(
 
 # --- Customize these variables ---
 
-__all__ = ['app', 'log', 'MASTER_BRANCH', 'paper_queue']
+#__all__ = ['app', 'log', 'MASTER_BRANCH']
