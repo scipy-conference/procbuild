@@ -16,6 +16,10 @@ pr_list_file = joinp(cache(), 'pr_info.json')
 
 
 def fetch_PRs(user, repo, state='open'):
+    """This command fetches PR information based on the passed in parameters.
+    
+    It will always request one more time than is necessary 
+    """
     fields = {'state': state,
               'per_page': 100,
               'page': 1}
