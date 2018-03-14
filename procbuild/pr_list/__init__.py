@@ -62,8 +62,8 @@ def fetch_PRs(user, repo, state='open'):
 def update_papers():
     PRs = fetch_PRs(user='scipy-conference', repo='scipy_proceedings', state='open')
 
-    PRs = [p for p in PRs if p['title'].startswith('Paper:')]
-
+    PRs = [p for p in reversed(PRs) if p['title'].startswith('Paper:')]
+    
     pr_info = []
     for p in PRs:
         pr_info.append({'user': p['head']['user']['login'], 'title': p['title'],
