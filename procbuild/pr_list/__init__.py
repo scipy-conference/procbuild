@@ -35,23 +35,26 @@ def fetch_PRs(user, repo, state='open'):
     data = []
     page_data = []
 
-    url = 'https://api.github.com/repos/{user:s}/{repo:s}/pulls'.format(**config)
+    base_url = 'https://api.github.com/repos/'
+    url = f'{base_url}{config["user"]}/{config["repo"]}/pulls'
     http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
 
     while len(data) == 0 or len(page_data) == responses_per_page:
-        fetch_status = 'Fetching page {page:d} (state={state:s})'.format(**fields) + \
-                       ' from {user:s}/{repo:s}...'.format(**config)
+        fetch_status = ('Fetching page {page:d} (state={state:s})'
+                        ' from {user:s}/{repo:s}...').format(**config)
         print(fetch_status)
 
         response = http.request('GET', url, fields=fields,
                                 headers={'user-agent': 'scipy-procbuild/0.1'})
 
         fields['page'] += 1
+        config.update(fields)
 
         page_data = json.loads(response.data.decode('utf-8'))
 
         if 'message' in page_data and page_data['message'] == "Not Found":
-            print('Warning: Repo not found ({user:s}/{repo:s})'.format(**config))
+            print(('Warning: Repo not found '
+                   '({user:s}/{repo:s})').format(**config))
             break
         elif len(page_data) == 0:
             print('No PRs on ({user:s}/{repo:s})'.format(**config))
@@ -63,7 +66,9 @@ def fetch_PRs(user, repo, state='open'):
 
 
 def update_papers():
-    PRs = fetch_PRs(user='scipy-conference', repo='scipy_proceedings', state='open')
+    PRs = fetch_PRs(user='scipy-conference', 
+                    repo='scipy_proceedings', 
+                    state='open')
 
     PRs = [p for p in reversed(PRs) if p['title'].startswith('Paper:')]
     

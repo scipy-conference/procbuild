@@ -40,7 +40,7 @@ docker run -it -p 7001:7001 yourname/procbuild
 - Fetch PRs by running `./update_prs`
 - Launch by running `runserver.py`
 
-Note: the server should run on both Python 2 and 3.
+Note: the server will run only on 3.6+
 
 You need all the same dependencies as for building the proceedings as well:
 
