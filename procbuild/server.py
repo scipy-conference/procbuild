@@ -17,27 +17,9 @@ from multiprocessing import Process, Queue
 
 
 from . import ALLOW_MANUAL_BUILD_TRIGGER, MASTER_BRANCH 
-from .builder import BuildManager, cache, base_path 
-from .pr_list import update_papers, pr_list_file
-
+from .builder import BuildManager, cache, base_path
+from .pr_list import outdated_pr_list, get_papers, get_pr_info
 from .utils import file_age, status_file, log
-
-def get_pr_info():
-    with io.open(pr_list_file) as f:
-        pr_info = json.load(f)
-    return pr_info
-
-
-def get_papers():
-    return [(str(n), pr) for n, pr in enumerate(get_pr_info())]
-
-
-def outdated_pr_list(expiry=1):
-    if not os.path.isfile(pr_list_file):
-        update_papers()
-    elif file_age(pr_list_file) > expiry:
-        log("Updating papers...")
-        update_papers()
 
 
 def status_from_cache(nr):
