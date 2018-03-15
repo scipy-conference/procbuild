@@ -20,14 +20,11 @@ import zmq
 import random
 import json
 
+from . import ALLOW_MANUAL_BUILD_TRIGGER, MASTER_BRANCH 
 from .message_proxy import IN
 
 from .builder import build as build_paper, cache, base_path
 from .pr_list import update_papers, pr_list_file
-
-MASTER_BRANCH = os.environ.get('MASTER_BRANCH', '2017')
-ALLOW_MANUAL_BUILD_TRIGGER = bool(int(os.environ.get(
-    'ALLOW_MANUAL_BUILD_TRIGGER', 1)))
 
 
 print("Connecting to message bus")
