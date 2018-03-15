@@ -10,7 +10,7 @@ import time
 import random
 
 from os.path import join as joinp
-from glob import glob
+from glob import glob, iglob
 
 excluded = ['vanderwalt', '00_vanderwalt', 'jane_doe', 'bibderwalt', '00_intro']
 
@@ -80,7 +80,172 @@ def checkout(repo, branch, build_path):
     return shell('git clone %s --branch %s --single-branch %s' %
                  (repo, branch, build_path), retry=4)
 
+class BuildError(Exception):
+    
+    def __init__(self, message):
+        self.message = f"A build error occurred during the self.{message} step."
 
+class BuildManager(object):
+    
+    def __init__(self, 
+                 user, 
+                 branch, 
+                 target, 
+                 master_branch='master', 
+                 log=None):
+        self.user = user
+        self.build_output = ''
+        self.status = 'fail'
+        self.branch = branch
+        self.target = target
+        self.master_branch = master_branch
+        self.build_status = 'Build started...'
+        self.build_pdf_path = ''
+        self.master_repo_path = joinp(cache(), 'scipy_proceedings')
+        self.build_timestamp = time.strftime('%d/%m %H:%M')
+        self.target_path = joinp(cache(), '%s.pdf' % target)
+        self.build_path = None
+        
+        data_filenames = ['IEEEtran.cls', 
+                          'draftwatermark.sty', 
+                          'everypage.sty']
+        self.data_files = [joinp(base_path, 'data', f) for f in data_filenames]
+
+    def add_output(self, msg):
+        self.build_output += msg
+
+    @property
+    def status_report(self):
+        return {'status': self.status,
+                'data': {'build_status': self.build_status,
+                         'build_output': self.build_output,
+                         'build_pdf_path': self.build_pdf_path,
+                         'build_timestamp': self.build_timestamp}
+                }
+        
+    
+    def get_build_tools(self):
+        """This command will get the latest version of the repo path.
+        
+        """
+        if not os.path.exists(self.master_repo_path):
+            self.add_output('[*] Checking out proceedings build tools '
+                            f'to {self.master_repo_path}...\n')
+            errcode, output = checkout(repo('scipy-conference'), 
+                                       self.master_branch,
+                                       self.master_repo_path)
+        else:
+            self.add_output('[*] Updating proceedings build tools in'
+                            ' {self.master_repo_path}...\n')
+            errcode, output = shell('git pull', self.master_repo_path, retry=2)
+        
+        self.add_output(output)
+        
+        if errcode:
+            self.add_output('[X] Error code %d ' % errcode)
+            raise BuildError("get_build_tools")
+
+    def checkout_paper_repo(self):
+        self.add_output('[*] Check out paper repository...\n')
+        errcode, output = checkout(repo(self.user), 
+                                   self.branch, 
+                                   self.build_path)
+        self.add_output(output)
+        
+        if errcode:
+            self.add_output('[X] Error code %d\n' % errcode)
+            self.build_status = 'Failed to check out paper'
+            raise BuildError('checkout_paper_repo')
+
+    
+    def relocate_build_tools(self):
+        """Move local build tools into temporary directory
+        """
+        self.add_output('Moving proceedings build tools to temp directory...\n')
+        errcode, output = shell('cp -r '
+                                f'{self.master_repo_path}/. {self.build_path}')
+        self.add_output(output)
+        if errcode:
+            self.add_output('[X] Error code %d\n' % errcode)
+            self.build_status = 'Could not move build tools to temp directory'
+            raise BuildError('relocate_build_tools')
+
+    def relocate_static_files(self):
+        for f in self.data_files:
+            shutil.copy(f, self.paper_path)
+    
+    @property
+    def paper_path(self):
+        return joinp(self.build_path, 'papers', self.paper)
+        
+    @property
+    def paper(self):
+        if self.build_path is None:
+            self.add_output('[X] No build path declared: %s\n' % papers)
+            self.build_status = 'No build path declared'
+            raise BuildError('papers')
+        
+        papers = [p for p in iglob(self.build_path + '/papers/*')
+                  if not any(p.endswith(e) for e in excluded)]
+        print(papers)
+        if len(papers)<1:
+            self.add_output('[X] No papers found: %s\n' % papers)
+            self.build_status = 'Paper not found'
+            raise BuildError('papers')
+        
+        # elif len(papers)>1:
+        #     self.add_output('[X] More than one paper found')
+        #     self.build_status = 'More than one paper found'
+        #     raise BuildError('papers')
+        
+        else:
+            return papers[0].split('/')[-1]
+    
+    def run_make_paper_script(self):
+        """Runs the scipy_proceedings make_paper.sh script
+        
+        """
+        self.add_output('[*] Build the paper...\n')
+        errcode, output = shell('./make_paper.sh %s' % self.paper_path, self.build_path)
+        # errcode, output = shell('./make_paper.sh %s' self.paper_path, 
+        #                         self.build_path)
+        self.add_output(output)
+        if errcode:
+            self.add_output('[X] Error code %d\n' % errcode)
+            self.build_status = 'Build failed, make_paper.sh did not succeed'
+            raise BuildError('run_make_paper_script')
+
+    def retrieve_pdf(self):
+        """Collects pdf from temporary directory and moves it to target_path.
+        """
+        output_path = joinp(self.build_path, 'output', self.paper)
+        try:
+            shutil.copy(joinp(output_path, 'paper.pdf'), self.target_path)
+        except IOError:
+            self.add_output('[X] Paper build failed.\n')
+            self.build_status = 'Build failed, no pdf can be found'
+            raise BuildError('retrieve_pdf')
+
+    def build_paper(self):
+        try:
+            with tempfile.TemporaryDirectory() as build_path:
+                self.build_path = build_path
+                self.get_build_tools()
+                self.checkout_paper_repo()
+                self.relocate_build_tools()
+                self.relocate_static_files()
+                self.run_make_paper_script()
+                self.retrieve_pdf()
+        except BuildError as e:
+            self.add_output(e.message)
+            return self.status_report
+        
+        self.status = 'success'
+        self.build_status = 'success'
+        self.build_pdf_path = self.target_path
+
+        return self.status_report
+    
 def build(user, branch, target, master_branch='master', log=None):
     status = {'status': 'fail',
               'data': {'build_status': 'Build started...',
@@ -132,6 +297,7 @@ def build(user, branch, target, master_branch='master', log=None):
 
     # For safety, use our copy of the tools
     add_output('Installing proceedings build tools...\n')
+    print('cp -r %s/. %s' % (master_repo_path, build_path))
     errcode, output = shell('cp -r %s/. %s' % (master_repo_path, build_path))
     add_output(output)
     if errcode:

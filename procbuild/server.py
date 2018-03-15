@@ -16,7 +16,7 @@ from flask import Flask
 
 from multiprocessing import Process, Queue
 
-from .builder import build as build_paper, cache, base_path
+from .builder import build as build_paper, BuildManager, cache, base_path 
 from .pr_list import update_papers, pr_list_file
 
 MASTER_BRANCH = os.environ.get('MASTER_BRANCH', '2017')
@@ -195,6 +195,8 @@ def _build_worker(nr):
 
     def build_and_log(*args, **kwargs):
         status = build_paper(*args, **kwargs)
+        # build_manager = BuildManager(*args, **kwargs)
+        # status = build_manager.build_paper()
         with io.open(status_log, 'wb') as f:
             json.dump(status, codecs.getwriter('utf-8')(f), ensure_ascii=False)
 
