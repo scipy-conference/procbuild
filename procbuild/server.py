@@ -21,9 +21,7 @@ import json
 
 from . import ALLOW_MANUAL_BUILD_TRIGGER, MASTER_BRANCH 
 from .message_proxy import IN
-
-from .builder import build as build_paper, cache, base_path
-
+from .builder import build_paper, cache, base_path
 from .pr_list import outdated_pr_list, get_papers, get_pr_info
 from .utils import file_age, status_file, log
 
