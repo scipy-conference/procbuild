@@ -143,48 +143,6 @@ def build(*args, **kwarg):
         return dummy_build(*args, **kwarg)
 
 
-def _build_worker(nr):
-    pr_info = get_pr_info()
-    pr = pr_info[int(nr)]
-    age = file_age(status_file(nr))
-    min_wait = 0.5
-    if not (age is None or age > min_wait):
-        log("Did not build paper %d--recently built." % nr)
-        return
-
-    status_log = status_file(nr)
-    with io.open(status_log, 'wb') as f:
-        build_record = {'status': 'fail',
-                        'data': {'build_status': 'Building...',
-                                 'build_output': 'Initializing build...',
-                                 'build_timestamp': ''}}
-        json.dump(build_record, codecs.getwriter('utf-8')(f), ensure_ascii=False)
-
-
-    def build_and_log(*args, **kwargs):
-        status = build_paper(*args, **kwargs)
-        with io.open(status_log, 'wb') as f:
-            json.dump(status, codecs.getwriter('utf-8')(f), ensure_ascii=False)
-
-    p = Process(target=build_and_log,
-                kwargs=dict(user=pr['user'], branch=pr['branch'],
-                            master_branch=MASTER_BRANCH,
-                            target=nr, log=log))
-    p.start()
-
-    def killer(process, timeout):
-        time.sleep(timeout)
-        try:
-            process.terminate()
-        except OSError:
-            pass
-
-    k = Process(target=killer, args=(p, 180))
-    k.start()
-
-    # Wait for process to complete or to be killed
-    p.join()
-    k.terminate()
 
 #@app.route('/build_queue_size')
 #def print_build_queue(nr=None):
