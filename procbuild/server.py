@@ -16,12 +16,10 @@ from flask import Flask
 
 from multiprocessing import Process, Queue
 
+
+from . import ALLOW_MANUAL_BUILD_TRIGGER, MASTER_BRANCH 
 from .builder import BuildManager, cache, base_path 
 from .pr_list import update_papers, pr_list_file
-
-MASTER_BRANCH = os.environ.get('MASTER_BRANCH', '2017')
-ALLOW_MANUAL_BUILD_TRIGGER = bool(int(os.environ.get(
-    'ALLOW_MANUAL_BUILD_TRIGGER', 1)))
 
 
 def get_pr_info():
