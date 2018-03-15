@@ -10,7 +10,6 @@ import inspect
 import codecs
 
 from os.path import join as joinp
-from datetime import datetime, timedelta
 from glob import glob
 from flask import Flask
 
@@ -26,6 +25,7 @@ from .message_proxy import IN
 from .builder import build as build_paper, cache, base_path
 from .pr_list import update_papers, pr_list_file
 
+from .utils import file_age, status_file, log
 
 print("Connecting to message bus")
 ctx = zmq.Context()
@@ -49,33 +49,6 @@ def outdated_pr_list(expiry=1):
     elif file_age(pr_list_file) > expiry:
         log("Updating papers...")
         update_papers()
-
-
-def file_age(fn):
-    """Return the age of file `fn` in minutes.  Return None is the file does
-    not exist.
-    """
-    if not os.path.exists(fn):
-        return None
-
-    modified = datetime.fromtimestamp(os.path.getmtime(fn))
-    delta = datetime.now() - modified
-
-    return delta.seconds / 60
-
-
-def log(message):
-    print(message)
-    with io.open(joinp(os.path.dirname(__file__), '../flask.log'), 'a') as f:
-        time_of_message = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) 
-        cf = inspect.currentframe().f_back
-        where = '{}:{}'.format(cf.f_code.co_filename, cf.f_lineno)
-        f.write(" ".join([time_of_message, where, message, '\n']))
-        f.flush()
-
-
-def status_file(nr):
-    return joinp(cache(), str(nr) + '.status')
 
 
 def status_from_cache(nr):
