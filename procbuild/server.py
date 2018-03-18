@@ -194,9 +194,8 @@ def _build_worker(nr):
 
 
     def build_and_log(*args, **kwargs):
-        status = build_paper(*args, **kwargs)
-        # build_manager = BuildManager(*args, **kwargs)
-        # status = build_manager.build_paper()
+        build_manager = BuildManager(*args, **kwargs)
+        status = build_manager.build_paper()
         with io.open(status_log, 'wb') as f:
             json.dump(status, codecs.getwriter('utf-8')(f), ensure_ascii=False)
 

@@ -144,6 +144,21 @@ class BuildManager(object):
         if errcode:
             self.add_output('[X] Error code %d ' % errcode)
             raise BuildError("get_build_tools")
+        
+        self.remove_papers_dir()
+        
+    
+    def remove_papers_dir(self):
+        """ this command will remove the papers dir from the build_tools dir
+        
+        """
+        errcode, output = shell('rm -rf scipy_proceedings/papers')
+        
+        self.add_output(output)
+
+        if errcode:
+            self.add_output('[X] Error code %d ' % errcode)
+            raise BuildError("remove_papers_dir")
 
     def checkout_paper_repo(self):
         self.add_output('[*] Check out paper repository...\n')
