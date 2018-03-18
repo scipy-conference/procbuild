@@ -8,14 +8,63 @@ import codecs
 
 from os.path import join as joinp
 
-from ..builder import cache
+from .. import package_path
 from ..utils import file_age, log
 
 __all__ = ['fetch_PRs', 'update_papers']
 
+
+
+def cache(path='../cache'):
+    cache_path = joinp(package_path, path)
+    try:
+        os.mkdir(cache_path)
+    except OSError as e:
+        pass
+
+    return cache_path
+    
 pr_list_file = joinp(cache(), 'pr_info.json')
 
-def outdated_pr_list(expiry=1):
+def status_file(nr):
+    return joinp(cache(), str(nr) + '.status')
+
+
+def status_from_cache(nr):
+    papers = get_papers()
+    if nr == '*':
+        status_files = [status_file(i) for i in range(len(papers))]
+    else:
+        status_files = [status_file(nr)]
+
+    data = {}
+
+    for fn in status_files:
+        n = fn.split('/')[-1].split('.')[0]
+
+        try:
+            papers[int(n)]
+        except:
+            data[n] = {'status': 'fail',
+                       'data': {'build_output': 'Invalid paper'}}
+        else:
+            status = {'status': 'fail',
+                      'data': {'build_output': 'No build info'}}
+
+            if os.path.exists(fn):
+                with io.open(fn, 'r') as f:
+                    try:
+                        data[n] = json.load(f)
+                    except ValueError:
+                        pass
+
+    # Unpack status if only one record requested
+    if nr != '*':
+        return data[nr]
+    else:
+        return data
+
+def update_pr_list(expiry=1):
     if not os.path.isfile(pr_list_file):
         update_papers()
     elif file_age(pr_list_file) > expiry:

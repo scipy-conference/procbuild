@@ -3,73 +3,20 @@ from __future__ import print_function, absolute_import, unicode_literals
 from flask import (render_template, url_for, send_file, jsonify,
                    request, Flask)
 import json
-import os
-import io
-import time
-import inspect
-import codecs
-
-from os.path import join as joinp
-from glob import glob
-from flask import Flask
-
 import subprocess
 
 import zmq
-import random
-import json
 
+from . import ALLOW_MANUAL_BUILD_TRIGGER
 from .message_proxy import IN
-
-
-from . import ALLOW_MANUAL_BUILD_TRIGGER, MASTER_BRANCH 
-from .builder import BuildManager, cache, base_path
-from .pr_list import outdated_pr_list, get_papers, get_pr_info
-from .utils import file_age, status_file, log
+from .pr_list import update_pr_list, get_papers, get_pr_info, status_from_cache
+from .utils import log
 
 
 print("Connecting to message bus")
 ctx = zmq.Context()
 socket = ctx.socket(zmq.PUSH)
 socket.connect(IN)
-
-
-
-
-def status_from_cache(nr):
-    papers = get_papers()
-    if nr == '*':
-        status_files = [status_file(i) for i in range(len(papers))]
-    else:
-        status_files = [status_file(nr)]
-
-    data = {}
-
-    for fn in status_files:
-        n = fn.split('/')[-1].split('.')[0]
-
-        try:
-            papers[int(n)]
-        except:
-            data[n] = {'status': 'fail',
-                       'data': {'build_output': 'Invalid paper'}}
-        else:
-            status = {'status': 'fail',
-                      'data': {'build_output': 'No build info'}}
-
-            if os.path.exists(fn):
-                with io.open(fn, 'r') as f:
-                    try:
-                        data[n] = json.load(f)
-                    except ValueError:
-                        pass
-
-    # Unpack status if only one record requested
-    if nr != '*':
-        return data[nr]
-    else:
-        return data
-
 
 app = Flask(__name__)
 print("Starting up build queue...")
@@ -78,27 +25,13 @@ subprocess.Popen(['python', '-m', 'procbuild.message_proxy'])
 @app.route('/')
 def index():
     # if it's never been built or is over 1 minute old, update_papers
-    outdated_pr_list(expiry=5)
+    update_pr_list(expiry=5)
     papers = get_papers()
 
     return render_template('index.html', papers=papers,
                            build_url=url_for('build', nr=''),
                            download_url=url_for('download', nr=''),
                            allow_manual_build_trigger=ALLOW_MANUAL_BUILD_TRIGGER)
-
-
-# TODO: MOVE THIS TO THE LISTENER
-#
-# def _process_queue(queue):
-#     done = False
-#     while not done:
-#         nr = queue.get()
-#         if nr is None:
-#             log("Sentinel found in queue. Ending queue monitor.")
-#             done = True
-#         else:
-#             log("Queue yielded paper #%d." % nr)
-#             _build_worker(nr)
 
 
 def monitor_queue():

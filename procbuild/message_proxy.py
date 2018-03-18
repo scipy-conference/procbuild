@@ -1,11 +1,11 @@
 # http://zguide.zeromq.org/page:all#The-Dynamic-Discovery-Problem
 
 import zmq
-from . import package_dir
+from . import package_path
 
 
-IN = f'ipc://{package_dir}/queue.in'
-OUT = f'ipc://{package_dir}/queue.out'
+IN = f'ipc://{package_path}/queue.in'
+OUT = f'ipc://{package_path}/queue.out'
 
 
 if __name__ == "__main__":

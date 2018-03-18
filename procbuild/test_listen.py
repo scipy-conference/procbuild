@@ -7,8 +7,8 @@ from multiprocessing import Process
 
 from . import MASTER_BRANCH
 from .message_proxy import OUT
-from .utils import file_age, status_file
-from .pr_list import get_pr_info, log
+from .utils import file_age, log
+from .pr_list import get_pr_info, status_file
 from .builder import BuildManager
 
 def handle_message(data):
