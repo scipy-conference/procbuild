@@ -5,7 +5,6 @@ import subprocess
 import shlex
 import os
 import shutil
-import json
 import time
 import random
 
@@ -85,7 +84,8 @@ class BuildError(Exception):
     def __init__(self, message):
         self.message = f"A build error occurred during the self.{message} step."
 
-class BuildManager(object):
+        
+class BuildManager:
     
     def __init__(self, 
                  user, 
@@ -122,9 +122,9 @@ class BuildManager(object):
                          'build_pdf_path': self.build_pdf_path,
                          'build_timestamp': self.build_timestamp}
                 }
-        
-    
-    def get_build_tools(self):
+
+
+    def _get_build_tools(self):
         """This command will get the latest version of the repo path.
         
         """
@@ -145,10 +145,10 @@ class BuildManager(object):
             self.add_output('[X] Error code %d ' % errcode)
             raise BuildError("get_build_tools")
         
-        self.remove_papers_dir()
+        self._remove_papers_dir()
         
     
-    def remove_papers_dir(self):
+    def _remove_papers_dir(self):
         """ this command will remove the papers dir from the build_tools dir
         
         """
@@ -160,7 +160,7 @@ class BuildManager(object):
             self.add_output('[X] Error code %d ' % errcode)
             raise BuildError("remove_papers_dir")
 
-    def checkout_paper_repo(self):
+    def _checkout_paper_repo(self):
         self.add_output('[*] Check out paper repository...\n')
         errcode, output = checkout(repo(self.user), 
                                    self.branch, 
@@ -173,7 +173,7 @@ class BuildManager(object):
             raise BuildError('checkout_paper_repo')
 
     
-    def relocate_build_tools(self):
+    def _relocate_build_tools(self):
         """Move local build tools into temporary directory
         """
         self.add_output('Moving proceedings build tools to temp directory...\n')
@@ -185,7 +185,7 @@ class BuildManager(object):
             self.build_status = 'Could not move build tools to temp directory'
             raise BuildError('relocate_build_tools')
 
-    def relocate_static_files(self):
+    def _relocate_static_files(self):
         for f in self.data_files:
             shutil.copy(f, self.paper_path)
     
@@ -195,15 +195,16 @@ class BuildManager(object):
         
     @property
     def paper(self):
+        papers = [p for p in iglob(self.build_path + '/papers/*')
+                  if not any(p.endswith(e) for e in excluded)]
+
         if self.build_path is None:
             self.add_output('[X] No build path declared: %s\n' % papers)
             self.build_status = 'No build path declared'
             raise BuildError('papers')
         
-        papers = [p for p in iglob(self.build_path + '/papers/*')
-                  if not any(p.endswith(e) for e in excluded)]
         print(papers)
-        if len(papers)<1:
+        if len(papers) < 1:
             self.add_output('[X] No papers found: %s\n' % papers)
             self.build_status = 'Paper not found'
             raise BuildError('papers')
@@ -216,7 +217,7 @@ class BuildManager(object):
         else:
             return papers[0].split('/')[-1]
     
-    def run_make_paper_script(self):
+    def _run_make_paper_script(self):
         """Runs the scipy_proceedings make_paper.sh script
         
         """
@@ -230,7 +231,7 @@ class BuildManager(object):
             self.build_status = 'Build failed, make_paper.sh did not succeed'
             raise BuildError('run_make_paper_script')
 
-    def retrieve_pdf(self):
+    def _retrieve_pdf(self):
         """Collects pdf from temporary directory and moves it to target_path.
         """
         output_path = joinp(self.build_path, 'output', self.paper)
@@ -245,12 +246,12 @@ class BuildManager(object):
         try:
             with tempfile.TemporaryDirectory() as build_path:
                 self.build_path = build_path
-                self.get_build_tools()
-                self.checkout_paper_repo()
-                self.relocate_build_tools()
-                self.relocate_static_files()
-                self.run_make_paper_script()
-                self.retrieve_pdf()
+                self._get_build_tools()
+                self._checkout_paper_repo()
+                self._relocate_build_tools()
+                self._relocate_static_files()
+                self._run_make_paper_script()
+                self._retrieve_pdf()
         except BuildError as e:
             self.add_output(e.message)
             return self.status_report
