@@ -27,7 +27,7 @@ def cache(path='../cache'):
 
 
 def repo(user='scipy'):
-    return 'https://github.com/%s/scipy_proceedings.git' % user
+    return f'https://github.com/{user}/scipy_proceedings.git'
 
 
 def error(msg):
@@ -76,9 +76,9 @@ def shell(cmd, path=None, retry=0):
 
 
 def checkout(repo, branch, build_path):
-    return shell('git clone %s --branch %s --single-branch %s' %
-                 (repo, branch, build_path), retry=4)
+    return shell(f'git clone {repo} --branch {branch} --single-branch {build_path}', retry=4)
 
+    
 class BuildError(Exception):
     
     def __init__(self, message):
@@ -152,7 +152,8 @@ class BuildManager:
         """ this command will remove the papers dir from the build_tools dir
         
         """
-        errcode, output = shell('rm -rf scipy_proceedings/papers')
+        errcode, output = shell('rm -rf papers', 
+                                path=self.master_repo_path)
         
         self.add_output(output)
 
@@ -203,16 +204,10 @@ class BuildManager:
             self.build_status = 'No build path declared'
             raise BuildError('papers')
         
-        print(papers)
         if len(papers) < 1:
             self.add_output('[X] No papers found: %s\n' % papers)
             self.build_status = 'Paper not found'
             raise BuildError('papers')
-        
-        # elif len(papers)>1:
-        #     self.add_output('[X] More than one paper found')
-        #     self.build_status = 'More than one paper found'
-        #     raise BuildError('papers')
         
         else:
             return papers[0].split('/')[-1]
@@ -261,97 +256,8 @@ class BuildManager:
         self.build_pdf_path = self.target_path
 
         return self.status_report
-    
-def build(user, branch, target, master_branch='master', log=None):
-    status = {'status': 'fail',
-              'data': {'build_status': 'Build started...',
-                       'build_output': '',
-                       'build_pdf_path': '',
-                       'build_timestamp': time.strftime('%d/%m %H:%M')}}
-
-    def add_output(msg):
-        status['data']['build_output'] += msg
-
-    build_path = tempfile.mkdtemp()
-    master_repo_path = joinp(cache(), 'scipy_proceedings')
-    target_path = joinp(cache(), '%s.pdf' % target)
-
-    if not os.path.exists(master_repo_path):
-        add_output('[*] Checking out proceedings build tools '
-                   'to %s...\n' % master_repo_path)
-        errcode, output = checkout(repo('scipy-conference'), master_branch,
-                                   master_repo_path)
-    else:
-        add_output('[*] Updating proceedings build tools in'
-                   ' %s...\n' % master_repo_path)
-        errcode, output = shell('git pull', master_repo_path, retry=2)
-
-    add_output(output)
-
-    if errcode:
-        add_output('[X] Error code %d ' % errcode)
-        return status
-
-    add_output('[*] Check out paper repository...\n')
-    errcode, output = checkout(repo(user), branch, build_path)
-    add_output(output)
-
-    if errcode:
-        add_output('[X] Error code %d\n' % errcode)
-        status['data']['build_status'] = 'Failed to check out paper'
-        return status
-
-    papers = glob(build_path + '/papers/*')
-    papers = [p for p in papers if not any(p.endswith(e) for e in excluded)]
-
-    try:
-        paper = papers[0].split('/')[-1]
-    except:
-        add_output('[X] No papers found: %s\n' % papers)
-        status['data']['build_status'] = 'Paper not found'
-        return status
-
-    # For safety, use our copy of the tools
-    add_output('Installing proceedings build tools...\n')
-    print('cp -r %s/. %s' % (master_repo_path, build_path))
-    errcode, output = shell('cp -r %s/. %s' % (master_repo_path, build_path))
-    add_output(output)
-    if errcode:
-        add_output('[X] Error code %d\n' % errcode)
-        status['data']['build_status'] = 'Could not install build tools'
-        return status
-
-    paper_path = joinp(build_path, 'papers', paper)
-    output_path = joinp(build_path, 'output', paper)
-
-    shutil.copy('%s/data/IEEEtran.cls' % base_path, paper_path)
-    shutil.copy('%s/data/draftwatermark.sty' % base_path, paper_path)
-    shutil.copy('%s/data/everypage.sty' % base_path, paper_path)
-
-    add_output('[*] Build the paper...\n')
-    errcode, output = shell('./make_paper.sh %s' % paper_path, build_path)
-    add_output(output)
-    if errcode:
-        add_output('[X] Error code %d\n' % errcode)
-        status['data']['build_status'] = 'Build failed'
-        return status
-
-    try:
-        shutil.copy(joinp(output_path, 'paper.pdf'), target_path)
-    except IOError:
-        add_output('[X] Paper build failed.\n')
-        status['data']['build_status'] = 'Build failed'
-        return status
-
-    add_output('[*] Remove temporary files...\n')
-    shutil.rmtree(build_path)
-
-    status['status'] = 'success'
-    status['data']['build_status'] = 'success'
-    status['data']['build_pdf_path'] = target_path
-
-    return status
 
 
 if __name__ == "__main__":
-    pdf_path = build('ejeschke', '2012', 'ejeschke')
+    build_man = BuildManager('ejeschke', '2012', 'ejeschke')
+    build_man.build_paper()
