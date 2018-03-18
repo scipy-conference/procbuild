@@ -52,12 +52,15 @@ def fetch_PRs(user, repo, state='open'):
 
         page_data = json.loads(response.data.decode('utf-8'))
 
-        if 'message' in page_data and page_data['message'] == "Not Found":
+        # There are two ways this can fail: no PRs or the repo doesn't exist.
+        if len(page_data) == 0:
+            # This happens when the repo exists, but there are no PRs from the user.
+            print('No PRs on ({user:s}/{repo:s})'.format(**config))
+            break
+        elif 'message' in page_data and page_data['message'] == "Not Found":
+            # This happens when the user does not have the repo.
             print(('Warning: Repo not found '
                    '({user:s}/{repo:s})').format(**config))
-            break
-        elif len(page_data) == 0:
-            print('No PRs on ({user:s}/{repo:s})'.format(**config))
             break
         else:
             data.extend(page_data)
