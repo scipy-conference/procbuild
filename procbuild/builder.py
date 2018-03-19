@@ -197,19 +197,25 @@ class BuildManager:
         
     @property
     def paper(self):
+        """This returns the directory from inside the papers/ directory in the PR.
+        
+        There should be one unique directory in the PR's papers/ directory that 
+        is not explicitly excluded based on values in ``excluded``.
+        
+        This will err if the there no papers are found after exclusion.
+        """
         papers = [p for p in iglob(self.build_path + '/papers/*')
                   if not any(p.endswith(e) for e in excluded)]
 
         if self.build_path is None:
             self.add_output('[X] No build path declared: %s\n' % papers)
             self.build_status = 'No build path declared'
-            raise BuildError('papers')
+            raise BuildError('paper')
         
         if len(papers) < 1:
             self.add_output('[X] No papers found: %s\n' % papers)
             self.build_status = 'Paper not found'
-            raise BuildError('papers')
-        
+            raise BuildError('paper')
         else:
             return papers[0].split('/')[-1]
     
