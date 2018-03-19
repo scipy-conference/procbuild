@@ -91,19 +91,20 @@ class BuildManager:
                  user, 
                  branch, 
                  target, 
+                 cache,
                  master_branch='master', 
                  log=None):
         self.user = user
         self.build_output = ''
         self.status = 'fail'
         self.branch = branch
-        self.target = target
         self.master_branch = master_branch
         self.build_status = 'Build started...'
         self.build_pdf_path = ''
-        self.master_repo_path = joinp(cache(), 'scipy_proceedings')
+        self.cache = cache
+        self.master_repo_path = joinp(self.cache, 'scipy_proceedings')
         self.build_timestamp = time.strftime('%d/%m %H:%M')
-        self.target_path = joinp(cache(), '%s.pdf' % target)
+        self.target_path = joinp(self.cache, f'{target!s}.pdf')
         self.build_path = None
         
         data_filenames = ['IEEEtran.cls', 
