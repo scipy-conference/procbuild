@@ -143,7 +143,7 @@ class BuildManager:
         self.add_output(output)
         
         if errcode:
-            self.add_output('[X] Error code %d ' % errcode)
+            self.add_output('[X] Could not get build tools, errcode: %d ' % errcode)
             raise BuildError("get_build_tools")
         
         self._remove_papers_dir()
@@ -159,7 +159,7 @@ class BuildManager:
         self.add_output(output)
 
         if errcode:
-            self.add_output('[X] Error code %d ' % errcode)
+            self.add_output('[X] Could not clean papers/ build tools, errcode: %d ' % errcode)
             raise BuildError("remove_papers_dir")
 
     def _checkout_paper_repo(self):
@@ -170,7 +170,7 @@ class BuildManager:
         self.add_output(output)
         
         if errcode:
-            self.add_output('[X] Error code %d\n' % errcode)
+            self.add_output('[X] Could not checkout user\'s repo, errcode: %d\n' % errcode)
             self.build_status = 'Failed to check out paper'
             raise BuildError('checkout_paper_repo')
 
@@ -183,7 +183,7 @@ class BuildManager:
                                 f'{self.master_repo_path}/. {self.build_path}')
         self.add_output(output)
         if errcode:
-            self.add_output('[X] Error code %d\n' % errcode)
+            self.add_output('[X] Could not relocate build tools, errcode: %d\n' % errcode)
             self.build_status = 'Could not move build tools to temp directory'
             raise BuildError('relocate_build_tools')
 
