@@ -29,6 +29,48 @@ which will create a docker image in your local repository that you can run with:
 docker run -it -p 7001:7001 yourname/procbuild
 ```
 
+
+## Pushing the Docker image to SciPy's DockerHub repository
+
+If you want to push the image to DockerHub so that it can be publicly available you would need to assign it that tag. 
+
+
+```bash
+docker build -t scipyproc/procbuild .
+```
+
+You should also increment the version number. You do this by adding a new tag.
+
+```bash
+docker tag scipyproc/procbuild scipyproc/procbuild:x.y 
+```
+
+Then you should push these up to the DockerHub repository (the default repository). This should push up both the latest version and the version number.
+
+```bash
+docker push scipyproc/procbuild
+```
+
+## Pushing the Docker image to Heroku's repository
+
+We run the server on in a Heroku called procbuild, found at [http://procbuild.herokuapp.com](http://procbuild.herokuapp.com). 
+
+In order to update the deployed version of the app, we need to push the image from our local repository to the heroku repository.
+
+This requires first retagging the image, specifically we need to tag the image in a way that the heroku registry expects. 
+
+You can do this with the same tagging functionality
+
+```bash
+docker tag scipyproc/procbuild registry.heroku.com/procbuild/web
+```
+
+Then you need to push it to the heroku registry
+
+```bash
+docker push registry.heroku.com/procbuild/web
+```
+
 ## General notes
 
 - Customize `runserver.py` to update this year's branch.
