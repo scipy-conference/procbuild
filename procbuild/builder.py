@@ -9,7 +9,7 @@ import time
 import random
 
 from os.path import join as joinp
-from glob import glob, iglob
+from glob import iglob
 
 excluded = ['vanderwalt', '00_vanderwalt', 'jane_doe', 'bibderwalt', '00_intro']
 
