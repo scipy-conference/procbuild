@@ -8,17 +8,22 @@ from multiprocessing import Process
 from . import MASTER_BRANCH
 from .message_proxy import OUT
 from .utils import file_age, log
-from .pr_list import get_pr_info, status_file
+from .pr_list import get_pr_info, status_file, cache
 from .builder import BuildManager
+
 
 def handle_message(data):
     print('Message received:', data)
 
-ctx = zmq.Context.instance()
-socket = ctx.socket(zmq.SUB)
-socket.connect(OUT)
 
-socket.setsockopt(zmq.SUBSCRIBE, 'build_queue'.encode('utf-8'))
+def create_listener_socket():
+    ctx = zmq.Context.instance()
+    socket = ctx.socket(zmq.SUB)
+    socket.connect(OUT)
+
+    socket.setsockopt(zmq.SUBSCRIBE, 'build_queue'.encode('utf-8'))
+    return socket
+
 
 def _build_worker(nr):
     pr_info = get_pr_info()
@@ -47,6 +52,7 @@ def _build_worker(nr):
     p = Process(target=build_and_log,
                 kwargs=dict(user=pr['user'], 
                             branch=pr['branch'],
+                            cache=cache(),
                             master_branch=MASTER_BRANCH,
                             target=nr, log=log))
     p.start()
@@ -68,8 +74,9 @@ def _build_worker(nr):
 if __name__ == "__main__":
     print('Listening for incoming messages...')
     while True:
+        socket = create_listener_socket()
         msg = socket.recv_multipart()
-        target, raw_payload= msg
+        target, raw_payload = msg
         payload = json.loads(raw_payload.decode('utf-8'))
         print('received', payload)
         paper_to_build = payload.get('build_paper', None)
