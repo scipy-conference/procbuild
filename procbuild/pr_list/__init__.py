@@ -9,10 +9,26 @@ import codecs
 from os.path import join as joinp
 
 from ..builder import cache
+from ..utils import file_age, log
 
 __all__ = ['fetch_PRs', 'update_papers']
 
 pr_list_file = joinp(cache(), 'pr_info.json')
+
+def outdated_pr_list(expiry=1):
+    if not os.path.isfile(pr_list_file):
+        update_papers()
+    elif file_age(pr_list_file) > expiry:
+        log("Updating papers...")
+        update_papers()
+
+def get_pr_info():
+    with io.open(pr_list_file) as f:
+        pr_info = json.load(f)
+    return pr_info
+
+def get_papers():
+    return [(str(n), pr) for n, pr in enumerate(get_pr_info())]
 
 
 def fetch_PRs(user, repo, state='open'):

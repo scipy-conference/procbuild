@@ -6,68 +6,29 @@ import json
 import os
 import io
 import time
-import inspect 
+import inspect
 import codecs
 
 from os.path import join as joinp
-from datetime import datetime, timedelta
 from glob import glob
 from flask import Flask
 
-from multiprocessing import Process, Queue
+import subprocess
 
-from .builder import build as build_paper, cache, base_path
-from .pr_list import update_papers, pr_list_file
+import zmq
+import random
+import json
 
-MASTER_BRANCH = os.environ.get('MASTER_BRANCH', '2017')
-ALLOW_MANUAL_BUILD_TRIGGER = bool(int(os.environ.get(
-    'ALLOW_MANUAL_BUILD_TRIGGER', 1)))
+from . import ALLOW_MANUAL_BUILD_TRIGGER, MASTER_BRANCH 
+from .message_proxy import IN
+from .builder import build_paper, cache, base_path
+from .pr_list import outdated_pr_list, get_papers, get_pr_info
+from .utils import file_age, status_file, log
 
-
-def get_pr_info():
-    with io.open(pr_list_file) as f:
-        pr_info = json.load(f)
-    return pr_info
-
-
-def get_papers():
-    return [(str(n), pr) for n, pr in enumerate(get_pr_info())]
-
-
-def outdated_pr_list(expiry=1):
-    if not os.path.isfile(pr_list_file):
-        update_papers()
-    elif file_age(pr_list_file) > expiry:
-        log("Updating papers...")
-        update_papers()
-
-
-def file_age(fn):
-    """Return the age of file `fn` in minutes.  Return None is the file does
-    not exist.
-    """
-    if not os.path.exists(fn):
-        return None
-
-    modified = datetime.fromtimestamp(os.path.getmtime(fn))
-    delta = datetime.now() - modified
-
-    return delta.seconds / 60
-
-
-def log(message):
-    print(message)
-    with io.open(joinp(os.path.dirname(__file__), '../flask.log'), 'a') as f:
-        time_of_message = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) 
-        cf = inspect.currentframe().f_back
-        where = '{}:{}'.format(cf.f_code.co_filename, cf.f_lineno)
-        f.write(" ".join([time_of_message, where, message, '\n']))
-        f.flush()
-
-
-def status_file(nr):
-    return joinp(cache(), str(nr) + '.status')
-
+print("Connecting to message bus")
+ctx = zmq.Context()
+socket = ctx.socket(zmq.PUSH)
+socket.connect(IN)
 
 def status_from_cache(nr):
     papers = get_papers()
@@ -105,11 +66,8 @@ def status_from_cache(nr):
 
 
 app = Flask(__name__)
-print("Setting up build queue...")
-
-paper_queue_size = 0
-paper_queue = {0: Queue(), 1: paper_queue_size}
-
+print("Starting up build queue...")
+subprocess.Popen(['python', '-m', 'procbuild.message_proxy'])
 
 @app.route('/')
 def index():
@@ -123,23 +81,24 @@ def index():
                            allow_manual_build_trigger=ALLOW_MANUAL_BUILD_TRIGGER)
 
 
-def _process_queue(queue):
-    done = False
-    while not done:
-        nr = queue.get()
-        if nr is None:
-            log("Sentinel found in queue. Ending queue monitor.")
-            done = True
-        else:
-            log("Queue yielded paper #%d." % nr)
-            _build_worker(nr)
+# TODO: MOVE THIS TO THE LISTENER
+#
+# def _process_queue(queue):
+#     done = False
+#     while not done:
+#         nr = queue.get()
+#         if nr is None:
+#             log("Sentinel found in queue. Ending queue monitor.")
+#             done = True
+#         else:
+#             log("Queue yielded paper #%d." % nr)
+#             _build_worker(nr)
 
 
 def monitor_queue():
-    print("Launching queue monitoring process...")
-    p = Process(target=_process_queue, kwargs=dict(queue=paper_queue[0]))
-    p.start()
-
+    print("Launching queue monitoring...")
+    ## TODO: Add logging to this subprocess
+    subprocess.Popen(['python', '-m', 'procbuild.test_listen'])
 
 def dummy_build(nr):
     return jsonify({'status': 'fail', 'message': 'Not authorized'})
@@ -153,12 +112,19 @@ def real_build(nr):
         return jsonify({'status': 'fail',
                         'message': 'Invalid paper specified'})
 
-    if paper_queue[1] >= 50:
-        return jsonify({'status': 'fail',
-                        'message': 'Build queue is currently full.'})
+## TODO: Move check to the listener
+#
+#    if paper_queue[1] >= 50:
+#        return jsonify({'status': 'fail',
+#                        'message': 'Build queue is currently full.'})
 
-    paper_queue[0].put(int(nr))
-    paper_queue[1] += 1
+    message = ['build_queue', json.dumps({'build_paper': nr})]
+
+    # TODO: remove after debugging
+    print('Submitting:', message)
+
+    # TODO: Error checking around this send?
+    socket.send_multipart([m.encode('utf-8') for m in message])
 
     return jsonify({'status': 'success',
                     'data': {'info': 'Build for paper %s scheduled.  Note that '
@@ -175,53 +141,11 @@ def build(*args, **kwarg):
         return dummy_build(*args, **kwarg)
 
 
-def _build_worker(nr):
-    pr_info = get_pr_info()
-    pr = pr_info[int(nr)]
-    age = file_age(status_file(nr))
-    min_wait = 0.5
-    if not (age is None or age > min_wait):
-        log("Did not build paper %d--recently built." % nr)
-        return
 
-    status_log = status_file(nr)
-    with io.open(status_log, 'wb') as f:
-        build_record = {'status': 'fail',
-                        'data': {'build_status': 'Building...',
-                                 'build_output': 'Initializing build...',
-                                 'build_timestamp': ''}}
-        json.dump(build_record, codecs.getwriter('utf-8')(f), ensure_ascii=False)
-
-
-    def build_and_log(*args, **kwargs):
-        status = build_paper(*args, **kwargs)
-        with io.open(status_log, 'wb') as f:
-            json.dump(status, codecs.getwriter('utf-8')(f), ensure_ascii=False)
-
-    p = Process(target=build_and_log,
-                kwargs=dict(user=pr['user'], branch=pr['branch'],
-                            master_branch=MASTER_BRANCH,
-                            target=nr, log=log))
-    p.start()
-
-    def killer(process, timeout):
-        time.sleep(timeout)
-        try:
-            process.terminate()
-        except OSError:
-            pass
-
-    k = Process(target=killer, args=(p, 180))
-    k.start()
-
-    # Wait for process to complete or to be killed
-    p.join()
-    k.terminate()
-
-@app.route('/build_queue_size')
-def print_build_queue(nr=None):
-
-    return jsonify(paper_queue[1])
+#@app.route('/build_queue_size')
+#def print_build_queue(nr=None):
+#
+#    return jsonify(paper_queue[1])
 
 @app.route('/status')
 @app.route('/status/<nr>')

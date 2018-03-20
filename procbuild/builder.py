@@ -81,7 +81,7 @@ def checkout(repo, branch, build_path):
                  (repo, branch, build_path), retry=4)
 
 
-def build(user, branch, target, master_branch='master', log=None):
+def build_paper(user, branch, target, master_branch='master', log=None):
     status = {'status': 'fail',
               'data': {'build_status': 'Build started...',
                        'build_output': '',
@@ -172,4 +172,4 @@ def build(user, branch, target, master_branch='master', log=None):
 
 
 if __name__ == "__main__":
-    pdf_path = build('ejeschke', '2012', 'ejeschke')
+    pdf_path = build_paper('ejeschke', '2012', 'ejeschke')

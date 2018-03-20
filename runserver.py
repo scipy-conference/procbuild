@@ -2,7 +2,7 @@
 
 # imports
 import os
-from procbuild import app, monitor_queue
+from procbuild.server import app, monitor_queue
 from waitress import serve
 
 # -- SERVER CONFIGURATION -- (can be overridden from shell)
