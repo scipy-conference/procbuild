@@ -1,9 +1,10 @@
-import zmq
 import json
 import io
 import codecs
 import time
 from multiprocessing import Process
+
+import zmq
 
 from . import MASTER_BRANCH
 from .message_proxy import OUT
@@ -12,26 +13,30 @@ from .pr_list import get_pr_info, status_file, cache
 from .builder import BuildManager
 
 
-def handle_message(data):
-    print('Message received:', data)
+class Listener:
+    def __init__(self, prefix='build_queue'):
+        self.ctx = zmq.Context()
+        self.socket = self.ctx.socket(zmq.SUB)
+        self.socket.connect(OUT)
+        self.socket.setsockopt(zmq.SUBSCRIBE, prefix.encode('utf-8'))
+        
+    def listen(self):
+        while True:
+            msg = self.socket.recv_multipart()
+            target, raw_payload = msg
+            payload = json.loads(raw_payload.decode('utf-8'))
+            print('received', payload)
+            paper_to_build = payload.get('build_paper', None)
+            _build_worker(paper_to_build)
 
-
-def create_listener_socket():
-    ctx = zmq.Context.instance()
-    socket = ctx.socket(zmq.SUB)
-    socket.connect(OUT)
-
-    socket.setsockopt(zmq.SUBSCRIBE, 'build_queue'.encode('utf-8'))
-    return socket
-
-
+        
 def _build_worker(nr):
     pr_info = get_pr_info()
     pr = pr_info[int(nr)]
     age = file_age(status_file(nr))
     min_wait = 0.5
-    if not (age is None or age > min_wait):
-        log("Did not build paper %d--recently built." % nr)
+    if age is None or age <= min_wait:
+        log(f"Did not build paper {nr}--recently built.")
         return
 
     status_log = status_file(nr)
@@ -43,8 +48,13 @@ def _build_worker(nr):
         json.dump(build_record, codecs.getwriter('utf-8')(f), ensure_ascii=False)
 
 
-    def build_and_log(*args, **kwargs):
-        build_manager = BuildManager(*args, **kwargs)
+    def build_and_log(user, branch, cache, master_branch, target, log):
+        build_manager = BuildManager(user=user, 
+                                     branch=branch,
+                                     cache=cache,
+                                     master_branch=master_branch,
+                                     target=target,
+                                     log=log)
         status = build_manager.build_paper()
         with io.open(status_log, 'wb') as f:
             json.dump(status, codecs.getwriter('utf-8')(f), ensure_ascii=False)
@@ -73,11 +83,5 @@ def _build_worker(nr):
 
 if __name__ == "__main__":
     print('Listening for incoming messages...')
-    while True:
-        socket = create_listener_socket()
-        msg = socket.recv_multipart()
-        target, raw_payload = msg
-        payload = json.loads(raw_payload.decode('utf-8'))
-        print('received', payload)
-        paper_to_build = payload.get('build_paper', None)
-        _build_worker(paper_to_build)
+    listener = Listener()
+    listener.listen()

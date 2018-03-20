@@ -15,7 +15,9 @@ from .utils import log
 
 app = Flask(__name__)
 print("Starting up build queue...")
+#TODO add logging to these processes
 subprocess.Popen(['python', '-m', 'procbuild.message_proxy'])
+subprocess.Popen(['python', '-m', 'procbuild.test_listen'])
 submitter = BuildRequestSubmitter()
 
 @app.route('/')
@@ -30,10 +32,6 @@ def index():
                            allow_manual_build_trigger=ALLOW_MANUAL_BUILD_TRIGGER)
 
 
-def monitor_queue():
-    print("Launching queue monitoring...")
-    ## TODO: Add logging to this subprocess
-    subprocess.Popen(['python', '-m', 'procbuild.test_listen'])
 
 def dummy_build(nr):
     return jsonify({'status': 'fail', 'message': 'Not authorized'})
