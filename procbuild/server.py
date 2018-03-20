@@ -8,19 +8,15 @@ import subprocess
 import zmq
 
 from . import ALLOW_MANUAL_BUILD_TRIGGER
-from .message_proxy import IN
+from .test_submit import BuildRequestSubmitter
 from .pr_list import update_pr_list, get_papers, get_pr_info, status_from_cache
 from .utils import log
 
 
-print("Connecting to message bus")
-ctx = zmq.Context()
-socket = ctx.socket(zmq.PUSH)
-socket.connect(IN)
-
 app = Flask(__name__)
 print("Starting up build queue...")
 subprocess.Popen(['python', '-m', 'procbuild.message_proxy'])
+submitter = BuildRequestSubmitter()
 
 @app.route('/')
 def index():
@@ -56,14 +52,7 @@ def real_build(nr):
 #    if paper_queue[1] >= 50:
 #        return jsonify({'status': 'fail',
 #                        'message': 'Build queue is currently full.'})
-
-    message = ['build_queue', json.dumps({'build_paper': nr})]
-
-    # TODO: remove after debugging
-    print('Submitting:', message)
-
-    # TODO: Error checking around this send?
-    socket.send_multipart([m.encode('utf-8') for m in message])
+    submitter.submit(nr)
 
     return jsonify({'status': 'success',
                     'data': {'info': 'Build for paper %s scheduled.  Note that '
