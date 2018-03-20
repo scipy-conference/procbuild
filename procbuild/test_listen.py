@@ -5,6 +5,8 @@ import time
 from multiprocessing import Process
 
 import zmq
+from zmq.asyncio import Context
+import asyncio
 
 from . import MASTER_BRANCH
 from .message_proxy import OUT
@@ -15,21 +17,23 @@ from .builder import BuildManager
 
 class Listener:
     def __init__(self, prefix='build_queue'):
-        self.ctx = zmq.Context()
+        self.ctx = Context.instance()
+        self.prefix = prefix
+
         self.socket = self.ctx.socket(zmq.SUB)
         self.socket.connect(OUT)
-        self.socket.setsockopt(zmq.SUBSCRIBE, prefix.encode('utf-8'))
-        
-    def listen(self):
+        self.socket.setsockopt(zmq.SUBSCRIBE, self.prefix.encode('utf-8'))
+
+    async def listen(self):
         while True:
-            msg = self.socket.recv_multipart()
+            msg = await self.socket.recv_multipart()
             target, raw_payload = msg
             payload = json.loads(raw_payload.decode('utf-8'))
             print('received', payload)
             paper_to_build = payload.get('build_paper', None)
             _build_worker(paper_to_build)
 
-        
+
 def _build_worker(nr):
     pr_info = get_pr_info()
     pr = pr_info[int(nr)]
@@ -60,7 +64,7 @@ def _build_worker(nr):
             json.dump(status, codecs.getwriter('utf-8')(f), ensure_ascii=False)
 
     p = Process(target=build_and_log,
-                kwargs=dict(user=pr['user'], 
+                kwargs=dict(user=pr['user'],
                             branch=pr['branch'],
                             cache=cache(),
                             master_branch=MASTER_BRANCH,
@@ -81,7 +85,22 @@ def _build_worker(nr):
     p.join()
     k.terminate()
 
+
+async def queue_builder():
+    while True:
+        # await an item from the queue
+        pr = await queue.pop()
+        # launch subprocess to build item
+
+
 if __name__ == "__main__":
     print('Listening for incoming messages...')
+
     listener = Listener()
-    listener.listen()
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(asyncio.gather([
+        listener.listen(),
+        queue_builder()
+        ]
+    )
