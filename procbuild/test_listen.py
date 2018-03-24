@@ -24,8 +24,9 @@ class Listener:
         self.socket = self.ctx.socket(zmq.SUB)
         self.socket.connect(OUT)
         self.socket.setsockopt(zmq.SUBSCRIBE, self.prefix.encode('utf-8'))
+        
         self.queue = asyncio.Queue()
-    
+        self.dont_build = set()
 
     async def listen(self):
         while True:
@@ -40,15 +41,20 @@ class Listener:
             if age is not None and age <= min_wait:
                 log(f"Did not build paper {paper_to_build}--recently built.")
                 continue
+            elif paper_to_build in self.dont_build:
+                log(f"Did not queue paper {paper_to_build}--already in queue.")
+                continue
+            self.dont_build.add(paper_to_build)
             await self.queue.put(paper_to_build)
 
     async def queue_builder(self, loop=None):
         while True:
             # await an item from the queue
-            pr = await self.queue.get()
+            nr = await self.queue.get()
+            self.dont_build.remove(nr)
             # launch subprocess to build item
             with ThreadPoolExecutor(max_workers=1) as e:
-                await loop.run_in_executor(e, _build_worker, pr)
+                await loop.run_in_executor(e, _build_worker, nr)
 
 def _build_worker(nr):
     pr_info = get_pr_info()
