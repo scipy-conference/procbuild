@@ -34,6 +34,12 @@ class Listener:
             payload = json.loads(raw_payload.decode('utf-8'))
             print('received', payload)
             paper_to_build = payload.get('build_paper', None)
+            
+            age = file_age(status_file(paper_to_build))
+            min_wait = 0.5
+            if age is not None and age <= min_wait:
+                log(f"Did not build paper {paper_to_build}--recently built.")
+                continue
             await self.queue.put(paper_to_build)
 
     async def queue_builder(self, loop=None):
@@ -47,11 +53,6 @@ class Listener:
 def _build_worker(nr):
     pr_info = get_pr_info()
     pr = pr_info[int(nr)]
-    age = file_age(status_file(nr))
-    min_wait = 0.5
-    if age is not None and age <= min_wait:
-        log(f"Did not build paper {nr}--recently built.")
-        return
 
     status_log = status_file(nr)
     with io.open(status_log, 'wb') as f:
