@@ -7,6 +7,7 @@ from multiprocessing import Process
 import zmq
 from zmq.asyncio import Context
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 from . import MASTER_BRANCH
 from .message_proxy import OUT
@@ -23,6 +24,8 @@ class Listener:
         self.socket = self.ctx.socket(zmq.SUB)
         self.socket.connect(OUT)
         self.socket.setsockopt(zmq.SUBSCRIBE, self.prefix.encode('utf-8'))
+        self.queue = asyncio.Queue()
+    
 
     async def listen(self):
         while True:
@@ -31,15 +34,22 @@ class Listener:
             payload = json.loads(raw_payload.decode('utf-8'))
             print('received', payload)
             paper_to_build = payload.get('build_paper', None)
-            _build_worker(paper_to_build)
+            await self.queue.put(paper_to_build)
 
+    async def queue_builder(self, loop=None):
+        while True:
+            # await an item from the queue
+            pr = await self.queue.get()
+            # launch subprocess to build item
+            with ThreadPoolExecutor(max_workers=1) as e:
+                await loop.run_in_executor(e, _build_worker, pr)
 
 def _build_worker(nr):
     pr_info = get_pr_info()
     pr = pr_info[int(nr)]
     age = file_age(status_file(nr))
     min_wait = 0.5
-    if age is None or age <= min_wait:
+    if age is not None and age <= min_wait:
         log(f"Did not build paper {nr}--recently built.")
         return
 
@@ -86,12 +96,6 @@ def _build_worker(nr):
     k.terminate()
 
 
-async def queue_builder():
-    while True:
-        # await an item from the queue
-        pr = await queue.pop()
-        # launch subprocess to build item
-
 
 if __name__ == "__main__":
     print('Listening for incoming messages...')
@@ -99,8 +103,10 @@ if __name__ == "__main__":
     listener = Listener()
 
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(asyncio.gather([
-        listener.listen(),
-        queue_builder()
-        ]
-    )
+    tasks = asyncio.gather(listener.listen(),
+                           listener.queue_builder(loop))
+    try:
+        loop.run_until_complete(tasks)
+    finally:
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.close()
