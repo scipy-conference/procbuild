@@ -36,16 +36,29 @@ class Listener:
             print('received', payload)
             paper_to_build = payload.get('build_paper', None)
             
-            age = file_age(status_file(paper_to_build))
-            min_wait = 0.5
-            if age is not None and age <= min_wait:
-                log(f"Did not build paper {paper_to_build}--recently built.")
-                continue
-            elif paper_to_build in self.dont_build:
-                log(f"Did not queue paper {paper_to_build}--already in queue.")
+            if self.check_age_and_queue(nr):
                 continue
             self.dont_build.add(paper_to_build)
             await self.queue.put(paper_to_build)
+    
+    def check_age(self, nr):
+        age = file_age(status_file(paper_to_build))
+        min_wait = 0.5
+        too_young = False
+        if age is not None and age <= min_wait:
+            log(f"Did not build paper {paper_to_build}--recently built.")
+            too_young = True
+        return too_young
+    
+    def check_queue(self, nr):
+        in_queue = False
+        if paper_to_build in self.dont_build:
+            log(f"Did not queue paper {paper_to_build}--already in queue.")
+            in_queue = True
+        return in_queue
+        
+    def check_age_and_queue(self, nr):
+        return check_age(nr) or check_queue(nr)
 
     async def queue_builder(self, loop=None):
         while True:
