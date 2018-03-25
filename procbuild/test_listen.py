@@ -59,6 +59,19 @@ class Listener:
         
     def check_age_and_queue(self, nr):
         return check_age(nr) or check_queue(nr)
+    
+    def report_status(self, nr):
+        """prints status notification from status_file for paper `nr` 
+        
+        """
+        with io.open(status_file(nr), 'r') as f:
+            status = json.load(f)['status']
+
+        if status['status'] == 'success':
+            print(f"Completed build for paper {nr}.")
+        else: 
+            print(f"Paper for {nr} did not build successfully.")
+
 
     async def queue_builder(self, loop=None):
         while True:
@@ -68,6 +81,8 @@ class Listener:
             # launch subprocess to build item
             with ThreadPoolExecutor(max_workers=1) as e:
                 await loop.run_in_executor(e, _build_worker, nr)
+                self.report_status(nr)
+
 
 def _build_worker(nr):
     pr_info = get_pr_info()
@@ -114,7 +129,6 @@ def _build_worker(nr):
     # Wait for process to complete or to be killed
     p.join()
     k.terminate()
-
 
 
 if __name__ == "__main__":
