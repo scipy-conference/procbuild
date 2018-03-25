@@ -1,3 +1,4 @@
-Flask
-waitress
-urllib3
+Flask==0.12.2
+waitress==1.0.2
+urllib3==1.22
+pyzmq==17.0.0
