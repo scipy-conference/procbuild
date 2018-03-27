@@ -80,57 +80,34 @@ class Listener:
             nr = await self.queue.get()
             # launch subprocess to build item
             with ThreadPoolExecutor(max_workers=1) as e:
-                await loop.run_in_executor(e, _build_worker, nr)
+                await loop.run_in_executor(e, self.build_and_log, nr)
                 self.dont_build.remove(nr)
                 self.report_status(nr)
+                
+    def paper_log(self, nr, record):
+        status_log = status_file(nr)
+        with io.open(status_log, 'wb') as f:
+            json.dump(record, codecs.getwriter('utf-8')(f), ensure_ascii=False)
+    
+    def build_and_log(self, nr):
+        pr_info = get_pr_info()
+        pr = pr_info[int(nr)]
 
-
-def _build_worker(nr):
-    pr_info = get_pr_info()
-    pr = pr_info[int(nr)]
-
-    status_log = status_file(nr)
-    with io.open(status_log, 'wb') as f:
         build_record = {'status': 'fail',
                         'data': {'build_status': 'Building...',
                                  'build_output': 'Initializing build...',
                                  'build_timestamp': ''}}
-        json.dump(build_record, codecs.getwriter('utf-8')(f), ensure_ascii=False)
+        self.paper_log(nr, build_record)
 
-
-    def build_and_log(user, branch, cache, master_branch, target, log):
-        build_manager = BuildManager(user=user, 
-                                     branch=branch,
-                                     cache=cache,
-                                     master_branch=master_branch,
-                                     target=target,
+        build_manager = BuildManager(user=pr['user'],
+                                     branch=pr['branch'],
+                                     cache=cache(),
+                                     master_branch=MASTER_BRANCH,
+                                     target=nr, 
                                      log=log)
+
         status = build_manager.build_paper()
-        with io.open(status_log, 'wb') as f:
-            json.dump(status, codecs.getwriter('utf-8')(f), ensure_ascii=False)
-
-    p = Process(target=build_and_log,
-                kwargs=dict(user=pr['user'],
-                            branch=pr['branch'],
-                            cache=cache(),
-                            master_branch=MASTER_BRANCH,
-                            target=nr, log=log))
-    p.start()
-
-    def killer(process, timeout):
-        time.sleep(timeout)
-        try:
-            process.terminate()
-        except OSError:
-            pass
-
-    k = Process(target=killer, args=(p, 180))
-    k.start()
-
-    # Wait for process to complete or to be killed
-    p.join()
-    k.terminate()
-
+        self.paper_log(nr, status)
 
 if __name__ == "__main__":
     print('Listening for incoming messages...')
