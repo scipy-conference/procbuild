@@ -2,12 +2,13 @@ import json
 import io
 import codecs
 import time
+import asyncio
+
 from multiprocessing import Process
+from concurrent.futures import ThreadPoolExecutor
 
 import zmq
 from zmq.asyncio import Context
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
 
 from . import MASTER_BRANCH
 from .message_proxy import OUT
@@ -36,29 +37,29 @@ class Listener:
             print('received', payload)
             paper_to_build = payload.get('build_paper', None)
             
-            if self.check_age_and_queue(nr):
+            if self.check_age_and_queue(paper_to_build):
                 continue
             self.dont_build.add(paper_to_build)
             await self.queue.put(paper_to_build)
     
     def check_age(self, nr):
-        age = file_age(status_file(paper_to_build))
+        age = file_age(status_file(nr))
         min_wait = 0.5
         too_young = False
         if age is not None and age <= min_wait:
-            log(f"Did not build paper {paper_to_build}--recently built.")
+            log(f"Did not build paper {nr}--recently built.")
             too_young = True
         return too_young
     
     def check_queue(self, nr):
         in_queue = False
-        if paper_to_build in self.dont_build:
-            log(f"Did not queue paper {paper_to_build}--already in queue.")
+        if nr in self.dont_build:
+            log(f"Did not queue paper {nr}--already in queue.")
             in_queue = True
         return in_queue
         
     def check_age_and_queue(self, nr):
-        return check_age(nr) or check_queue(nr)
+        return self.check_age(nr) or self.check_queue(nr)
     
     def report_status(self, nr):
         """prints status notification from status_file for paper `nr` 
@@ -67,7 +68,7 @@ class Listener:
         with io.open(status_file(nr), 'r') as f:
             status = json.load(f)['status']
 
-        if status['status'] == 'success':
+        if status == 'success':
             print(f"Completed build for paper {nr}.")
         else: 
             print(f"Paper for {nr} did not build successfully.")
@@ -77,10 +78,10 @@ class Listener:
         while True:
             # await an item from the queue
             nr = await self.queue.get()
-            self.dont_build.remove(nr)
             # launch subprocess to build item
             with ThreadPoolExecutor(max_workers=1) as e:
                 await loop.run_in_executor(e, _build_worker, nr)
+                self.dont_build.remove(nr)
                 self.report_status(nr)
 
 
