@@ -22,7 +22,7 @@ submitter = BuildRequestSubmitter()
 
 @app.route('/')
 def index():
-    # if it's never been built or is over 1 minute old, update_papers
+    # if it's never been built or is over 5 minutes old, update_papers
     update_pr_list(expiry=5)
     papers = get_papers()
 
@@ -45,11 +45,6 @@ def real_build(nr):
         return jsonify({'status': 'fail',
                         'message': 'Invalid paper specified'})
 
-## TODO: Move check to the listener
-#
-#    if paper_queue[1] >= 50:
-#        return jsonify({'status': 'fail',
-#                        'message': 'Build queue is currently full.'})
     submitter.submit(nr)
 
     return jsonify({'status': 'success',
