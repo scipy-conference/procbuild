@@ -1,5 +1,3 @@
-from __future__ import print_function, absolute_import
-
 import urllib3
 import json
 import os
@@ -14,14 +12,15 @@ from ..utils import file_age, log
 __all__ = ['fetch_PRs', 'update_papers']
 
 
-
 def cache(path='../cache'):
     cache_path = joinp(package_path, path)
     os.makedirs(cache_path, exist_ok=True)
     return cache_path
-    
+
+
 def get_pr_list_file():
     return joinp(cache(), 'pr_info.json')
+
 
 def status_file(nr):
     return joinp(cache(), str(nr) + '.status')

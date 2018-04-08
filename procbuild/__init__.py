@@ -1,5 +1,3 @@
-from __future__ import print_function, absolute_import
-
 import os
 
 package_path = os.path.abspath(os.path.dirname(__file__))

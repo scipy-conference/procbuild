@@ -1,5 +1,3 @@
-from __future__ import print_function, absolute_import, unicode_literals
-
 from flask import (render_template, url_for, send_file, jsonify,
                    request, Flask)
 import json
