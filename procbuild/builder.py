@@ -78,12 +78,18 @@ class BuildManager:
     
     Parameters
     ----------
-    user: str; name of GitHub user
-    branch: str; name of git branch on user's PR
-    target: str; string representation of integer for which paper to build
-    cache: str; cache directory in which the build tools and final paper live
-    master_branch: str; git branch for build tools 
-    log: function; logging function
+    user : str
+        name of GitHub user
+    branch : str
+        name of git branch on user's PR
+    target : str
+        string representation of integer for which paper to build
+    cache : str
+        cache directory in which the build tools and final paper live
+    master_branch : str, optional
+        git branch for build tools, defaults to "master"
+    log : function
+        logging function
     """
     
     def __init__(self, 

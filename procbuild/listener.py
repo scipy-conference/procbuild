@@ -1,10 +1,8 @@
 import json
 import io
 import codecs
-import time
 import asyncio
 
-from multiprocessing import Process
 from concurrent.futures import ThreadPoolExecutor
 
 import zmq
@@ -20,48 +18,42 @@ from .builder import BuildManager
 class Listener:
     """ Listener class for defining zmq sockets and maintaining a build queue.
     
-    Attributes:
-    ------------
-    ctx: zmq.asyncio.Context, the main context for the listener class
-    
-    prefix: str, the prefix listened for by zmq sockets
-    
-    socket: zmq.socket, the socket for listening to 
-    
-    queue: asyncio.Queue, the queue for holding the builds
-    
-    dont_build: set, unique collection of PRs currently in self.queue
+    Attributes
+    ----------
+    ctx : zmq.asyncio.Context 
+        main context for the listener class
+    socket : zmq.socket
+        the socket for listening to 
+    queue : asyncio.Queue
+        the queue for holding the builds
+    dont_build : set
+        unique collection of PRs currently in self.queue
         Note: Only modify self.dont_build within synchronous blocks.
-    
     """
     
-    def __init__(self, prefix='build_queue'):
-        """
-        Parameters:
-        ------------
-        build_queue: str, the prefix that will be checked for by the zmq socket
-        """
+    def __init__(self):
         self.ctx = Context.instance()
-        self.prefix = prefix
+        target_set = {'build_queue'}
 
         self.socket = self.ctx.socket(zmq.SUB)
         self.socket.connect(OUT)
-        self.socket.setsockopt(zmq.SUBSCRIBE, self.prefix.encode('utf-8'))
+        for target in target_set:
+            self.socket.setsockopt(zmq.SUBSCRIBE, target.encode('utf-8'))
         
         self.queue = asyncio.Queue()
         self.dont_build = set()
 
     async def listen(self):
         """Listener method, containing while loop for checking socket
+
         """
         while True:
             msg = await self.socket.recv_multipart()
             target, raw_payload = msg
             payload = json.loads(raw_payload.decode('utf-8'))
-            print('received', payload)
             paper_to_build = payload.get('build_paper', None)
             
-            if self.check_age_and_queue(paper_to_build):
+            if self.check_age(paper_to_build) or self.check_queue(paper_to_build):
                 continue
             self.dont_build.add(paper_to_build)
             await self.queue.put(paper_to_build)
@@ -69,9 +61,10 @@ class Listener:
     def check_age(self, nr):
         """Check the age of a PR's status_file based on its number. 
         
-        Parameters:
-        ------------
-        nr: int, the number of the PR in order of receipt
+        Parameters
+        ----------
+        nr : int
+            the number of the PR in order of receipt
         """
         age = file_age(status_file(nr))
         min_wait = 0.5
@@ -84,9 +77,10 @@ class Listener:
     def check_queue(self, nr):
         """Check whether the queue currently contains a build request for a PR.
         
-        Parameters:
-        ------------ 
-        nr: int, the number of the PR to check
+        Parameters
+        ---------- 
+        nr : int
+            the number of the PR to check
         """
         in_queue = False
         if nr in self.dont_build:
@@ -94,21 +88,13 @@ class Listener:
             in_queue = True
         return in_queue
         
-    def check_age_and_queue(self, nr):
-        """Check whether the PR is old enough or whether it is already in queue.
-        
-        Parameters:
-        ------------ 
-        nr: int, the number of the PR to check
-        """
-        return self.check_age(nr) or self.check_queue(nr)
-    
     def report_status(self, nr):
         """prints status notification from status_file for paper `nr` 
         
-        Parameters:
-        ------------ 
-        nr: int, the number of the PR to check
+        Parameters
+        ---------- 
+        nr : int
+            the number of the PR to check
         """
         with io.open(status_file(nr), 'r') as f:
             status = json.load(f)['status']
@@ -122,7 +108,8 @@ class Listener:
     async def queue_builder(self, loop=None):
         """Manage queue and trigger builds, report results.
         
-        loop: asyncio.loop, the loop on which to be running these tasks
+        loop : asyncio.loop
+            the loop on which to be running these tasks
         """
         while True:
             # await an item from the queue
@@ -136,10 +123,12 @@ class Listener:
     def paper_log(self, nr, record):
         """Writes status to PR's log file
         
-        Parameters:
-        ------------
-        nr: int, the number of the PR to check
-        record: dict, the dictionary content to be written to the log
+        Parameters
+        ---------- 
+        nr : int
+            the number of the PR to check
+        record : dict
+            the dictionary content to be written to the log
         """
         status_log = status_file(nr)
         with io.open(status_log, 'wb') as f:
@@ -148,9 +137,10 @@ class Listener:
     def build_and_log(self, nr):
         """Builds paper for PR number and logs the resulting status
         
-        Parameters:
-        ------------
-        nr: int, the number of the PR to check
+        Parameters
+        ----------
+        nr : int
+            the number of the PR to check
         """
         pr_info = get_pr_info()
         pr = pr_info[int(nr)]
@@ -170,6 +160,7 @@ class Listener:
 
         status = build_manager.build_paper()
         self.paper_log(nr, status)
+
 
 if __name__ == "__main__":
     print('Listening for incoming messages...')
