@@ -5,20 +5,20 @@ from flask import (render_template, url_for, send_file, jsonify,
 import json
 import subprocess
 
-import zmq
 
 from . import ALLOW_MANUAL_BUILD_TRIGGER
-from .test_submit import BuildRequestSubmitter
+from .submitter import BuildRequestSubmitter
 from .pr_list import update_pr_list, get_papers, get_pr_info, status_from_cache
 from .utils import log
 
 
 app = Flask(__name__)
 print("Starting up build queue...")
-#TODO add logging to these processes
+# TODO add logging to these processes
 subprocess.Popen(['python', '-m', 'procbuild.message_proxy'])
-subprocess.Popen(['python', '-m', 'procbuild.test_listen'])
+subprocess.Popen(['python', '-m', 'procbuild.listener'])
 submitter = BuildRequestSubmitter()
+
 
 @app.route('/')
 def index():
@@ -122,4 +122,3 @@ def webhook():
         return jsonify({'status': 'fail',
                         'message': 'Hook called for building '
                                    'non-existing paper (%s)' % pr_url})
-

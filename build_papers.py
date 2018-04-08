@@ -3,7 +3,7 @@
 # Schedule some or all papers for build
 
 from procbuild.pr_list import get_papers
-from procbuild.test_submit import BuildRequestSubmitter
+from procbuild.submitter import BuildRequestSubmitter
 import sys
 
 if len(sys.argv) > 1:
