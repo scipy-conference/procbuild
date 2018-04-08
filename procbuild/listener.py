@@ -18,7 +18,29 @@ from .builder import BuildManager
 
 
 class Listener:
+    """ Listener class for defining zmq sockets and maintaining a build queue.
+    
+    Attributes:
+    ------------
+    ctx: zmq.asyncio.Context, the main context for the listener class
+    
+    prefix: str, the prefix listened for by zmq sockets
+    
+    socket: zmq.socket, the socket for listening to 
+    
+    queue: asyncio.Queue, the queue for holding the builds
+    
+    dont_build: set, unique collection of PRs currently in self.queue
+        Note: Only modify self.dont_build within synchronous blocks.
+    
+    """
+    
     def __init__(self, prefix='build_queue'):
+        """
+        Parameters:
+        ------------
+        build_queue: str, the prefix that will be checked for by the zmq socket
+        """
         self.ctx = Context.instance()
         self.prefix = prefix
 
@@ -30,6 +52,8 @@ class Listener:
         self.dont_build = set()
 
     async def listen(self):
+        """Listener method, containing while loop for checking socket
+        """
         while True:
             msg = await self.socket.recv_multipart()
             target, raw_payload = msg
@@ -43,6 +67,12 @@ class Listener:
             await self.queue.put(paper_to_build)
     
     def check_age(self, nr):
+        """Check the age of a PR's status_file based on its number. 
+        
+        Parameters:
+        ------------
+        nr: int, the number of the PR in order of receipt
+        """
         age = file_age(status_file(nr))
         min_wait = 0.5
         too_young = False
@@ -52,6 +82,12 @@ class Listener:
         return too_young
     
     def check_queue(self, nr):
+        """Check whether the queue currently contains a build request for a PR.
+        
+        Parameters:
+        ------------ 
+        nr: int, the number of the PR to check
+        """
         in_queue = False
         if nr in self.dont_build:
             log(f"Did not queue paper {nr}--already in queue.")
@@ -59,11 +95,20 @@ class Listener:
         return in_queue
         
     def check_age_and_queue(self, nr):
+        """Check whether the PR is old enough or whether it is already in queue.
+        
+        Parameters:
+        ------------ 
+        nr: int, the number of the PR to check
+        """
         return self.check_age(nr) or self.check_queue(nr)
     
     def report_status(self, nr):
         """prints status notification from status_file for paper `nr` 
         
+        Parameters:
+        ------------ 
+        nr: int, the number of the PR to check
         """
         with io.open(status_file(nr), 'r') as f:
             status = json.load(f)['status']
@@ -75,6 +120,10 @@ class Listener:
 
 
     async def queue_builder(self, loop=None):
+        """Manage queue and trigger builds, report results.
+        
+        loop: asyncio.loop, the loop on which to be running these tasks
+        """
         while True:
             # await an item from the queue
             nr = await self.queue.get()
@@ -85,11 +134,24 @@ class Listener:
                 self.report_status(nr)
                 
     def paper_log(self, nr, record):
+        """Writes status to PR's log file
+        
+        Parameters:
+        ------------
+        nr: int, the number of the PR to check
+        record: dict, the dictionary content to be written to the log
+        """
         status_log = status_file(nr)
         with io.open(status_log, 'wb') as f:
             json.dump(record, codecs.getwriter('utf-8')(f), ensure_ascii=False)
     
     def build_and_log(self, nr):
+        """Builds paper for PR number and logs the resulting status
+        
+        Parameters:
+        ------------
+        nr: int, the number of the PR to check
+        """
         pr_info = get_pr_info()
         pr = pr_info[int(nr)]
 
