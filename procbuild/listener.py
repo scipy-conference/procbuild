@@ -51,14 +51,14 @@ class Listener:
             msg = await self.socket.recv_multipart()
             target, raw_payload = msg
             payload = json.loads(raw_payload.decode('utf-8'))
-            paper_to_build = payload.get('build_paper', None)
+            paper_nr = payload.get('build_paper', None)
             
-            if self.check_age(paper_to_build) or self.check_queue(paper_to_build):
+            if self.paper_too_young(paper_nr) or self.paper_in_queue(paper_nr):
                 continue
-            self.dont_build.add(paper_to_build)
-            await self.queue.put(paper_to_build)
+            self.dont_build.add(paper_nr)
+            await self.queue.put(paper_nr)
     
-    def check_age(self, nr):
+    def paper_too_young(self, nr):
         """Check the age of a PR's status_file based on its number. 
         
         Parameters
@@ -68,13 +68,12 @@ class Listener:
         """
         age = file_age(status_file(nr))
         min_wait = 0.5
-        too_young = False
-        if age is not None and age <= min_wait:
+        too_young = (age is not None) and (age <= min_wait)
+        if too_young:
             log(f"Did not build paper {nr}--recently built.")
-            too_young = True
         return too_young
     
-    def check_queue(self, nr):
+    def paper_in_queue(self, nr):
         """Check whether the queue currently contains a build request for a PR.
         
         Parameters
@@ -82,10 +81,9 @@ class Listener:
         nr : int
             the number of the PR to check
         """
-        in_queue = False
-        if nr in self.dont_build:
+        in_queue = nr in self.dont_build
+        if in_queue:
             log(f"Did not queue paper {nr}--already in queue.")
-            in_queue = True
         return in_queue
         
     def report_status(self, nr):
