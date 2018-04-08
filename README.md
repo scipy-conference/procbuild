@@ -48,7 +48,7 @@ This includes some packages on pypi which we'll install with `pip`. The easiest
 way to do this is by pulling down the latest version of the file with `curl`:
 
 ```
-pip install -r <(curl https://raw.githubusercontent.com/scipy-conference/scipy_proceedings/2017/requirements.txt)
+pip install -r <(curl https://raw.githubusercontent.com/scipy-conference/scipy_proceedings/2018/requirements.txt)
 ```
 
 Additionally, you will need to install a version of LaTeX and some external
