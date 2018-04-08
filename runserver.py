@@ -2,7 +2,7 @@
 
 # imports
 import os
-from procbuild import app, monitor_queue
+from procbuild.server import app
 from waitress import serve
 
 # -- SERVER CONFIGURATION -- (can be overridden from shell)
@@ -19,9 +19,7 @@ for (key, val) in config:
 print('Monitoring build queue...')
 
 # Iniitalize queue monitor
-monitor_queue()
 serve(app, host='0.0.0.0', port=os.environ['PORT'])
 
 # Without waitress, this is the call:
-#
 # app.run(debug=False, host='0.0.0.0', port=7001)

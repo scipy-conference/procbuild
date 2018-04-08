@@ -1,5 +1,3 @@
-from __future__ import print_function, absolute_import
-
 import urllib3
 import json
 import os
@@ -8,24 +6,76 @@ import codecs
 
 from os.path import join as joinp
 
-from ..builder import cache
+from .. import package_path
 from ..utils import file_age, log
 
 __all__ = ['fetch_PRs', 'update_papers']
 
-pr_list_file = joinp(cache(), 'pr_info.json')
 
-def outdated_pr_list(expiry=1):
-    if not os.path.isfile(pr_list_file):
+def cache(path='../cache'):
+    cache_path = joinp(package_path, path)
+    os.makedirs(cache_path, exist_ok=True)
+    return cache_path
+
+
+def get_pr_list_file():
+    return joinp(cache(), 'pr_info.json')
+
+
+def status_file(nr):
+    return joinp(cache(), str(nr) + '.status')
+
+
+def status_from_cache(nr):
+    papers = get_papers()
+    if nr == '*':
+        status_files = [status_file(i) for i in range(len(papers))]
+    else:
+        status_files = [status_file(nr)]
+
+    data = {}
+
+    for fn in status_files:
+        n = fn.split('/')[-1].split('.')[0]
+
+        try:
+            papers[int(n)]
+        except:
+            data[n] = {'status': 'fail',
+                       'data': {'build_output': 'Invalid paper'}}
+        else:
+            status = {'status': 'fail',
+                      'data': {'build_output': 'No build info'}}
+
+            if os.path.exists(fn):
+                with io.open(fn, 'r') as f:
+                    try:
+                        data[n] = json.load(f)
+                    except ValueError:
+                        pass
+
+    # Unpack status if only one record requested
+    if nr != '*':
+        return data[nr]
+    else:
+        return data
+
+
+def update_pr_list(expiry=1):
+    if not os.path.isfile(get_pr_list_file()):
         update_papers()
-    elif file_age(pr_list_file) > expiry:
+    elif file_age(get_pr_list_file()) > expiry:
         log("Updating papers...")
         update_papers()
 
+
 def get_pr_info():
-    with io.open(pr_list_file) as f:
+    if not os.path.exists(get_pr_list_file()):
+        update_papers()
+    with io.open(get_pr_list_file(), 'r') as f:
         pr_info = json.load(f)
     return pr_info
+
 
 def get_papers():
     return [(str(n), pr) for n, pr in enumerate(get_pr_info())]
@@ -96,5 +146,5 @@ def update_papers():
         pr_info.append({'user': p['head']['user']['login'], 'title': p['title'],
                         'branch': p['head']['ref'], 'url': p['html_url']})
 
-    with io.open(pr_list_file, 'wb') as f:
+    with io.open(get_pr_list_file(), 'wb') as f:
         json.dump(pr_info, codecs.getwriter('utf-8')(f), ensure_ascii=False)

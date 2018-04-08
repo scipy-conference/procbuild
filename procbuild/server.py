@@ -1,73 +1,27 @@
-from __future__ import print_function, absolute_import, unicode_literals
-
 from flask import (render_template, url_for, send_file, jsonify,
                    request, Flask)
 import json
-import os
-import io
-import time
-import inspect 
-import codecs
-
-from os.path import join as joinp
-from glob import glob
-from flask import Flask
-
-from multiprocessing import Process, Queue
+import subprocess
 
 
-from . import ALLOW_MANUAL_BUILD_TRIGGER, MASTER_BRANCH 
-from .builder import BuildManager, cache, base_path
-from .pr_list import outdated_pr_list, get_papers, get_pr_info
-from .utils import file_age, status_file, log
-
-
-def status_from_cache(nr):
-    papers = get_papers()
-    if nr == '*':
-        status_files = [status_file(i) for i in range(len(papers))]
-    else:
-        status_files = [status_file(nr)]
-
-    data = {}
-
-    for fn in status_files:
-        n = fn.split('/')[-1].split('.')[0]
-
-        try:
-            papers[int(n)]
-        except:
-            data[n] = {'status': 'fail',
-                       'data': {'build_output': 'Invalid paper'}}
-        else:
-            status = {'status': 'fail',
-                      'data': {'build_output': 'No build info'}}
-
-            if os.path.exists(fn):
-                with io.open(fn, 'r') as f:
-                    try:
-                        data[n] = json.load(f)
-                    except ValueError:
-                        pass
-
-    # Unpack status if only one record requested
-    if nr != '*':
-        return data[nr]
-    else:
-        return data
+from . import ALLOW_MANUAL_BUILD_TRIGGER
+from .submitter import BuildRequestSubmitter
+from .pr_list import update_pr_list, get_papers, get_pr_info, status_from_cache
+from .utils import log
 
 
 app = Flask(__name__)
-print("Setting up build queue...")
-
-paper_queue_size = 0
-paper_queue = {0: Queue(), 1: paper_queue_size}
+print("Starting up build queue...")
+# TODO add logging to these processes
+subprocess.Popen(['python', '-m', 'procbuild.message_proxy'])
+subprocess.Popen(['python', '-m', 'procbuild.listener'])
+submitter = BuildRequestSubmitter()
 
 
 @app.route('/')
 def index():
-    # if it's never been built or is over 1 minute old, update_papers
-    outdated_pr_list(expiry=5)
+    # if it's never been built or is over 5 minutes old, update_papers
+    update_pr_list(expiry=5)
     papers = get_papers()
 
     return render_template('index.html', papers=papers,
@@ -75,23 +29,6 @@ def index():
                            download_url=url_for('download', nr=''),
                            allow_manual_build_trigger=ALLOW_MANUAL_BUILD_TRIGGER)
 
-
-def _process_queue(queue):
-    done = False
-    while not done:
-        nr = queue.get()
-        if nr is None:
-            log("Sentinel found in queue. Ending queue monitor.")
-            done = True
-        else:
-            log("Queue yielded paper #%d." % nr)
-            _build_worker(nr)
-
-
-def monitor_queue():
-    print("Launching queue monitoring process...")
-    p = Process(target=_process_queue, kwargs=dict(queue=paper_queue[0]))
-    p.start()
 
 
 def dummy_build(nr):
@@ -106,12 +43,7 @@ def real_build(nr):
         return jsonify({'status': 'fail',
                         'message': 'Invalid paper specified'})
 
-    if paper_queue[1] >= 50:
-        return jsonify({'status': 'fail',
-                        'message': 'Build queue is currently full.'})
-
-    paper_queue[0].put(int(nr))
-    paper_queue[1] += 1
+    submitter.submit(nr)
 
     return jsonify({'status': 'success',
                     'data': {'info': 'Build for paper %s scheduled.  Note that '
@@ -128,55 +60,11 @@ def build(*args, **kwarg):
         return dummy_build(*args, **kwarg)
 
 
-def _build_worker(nr):
-    pr_info = get_pr_info()
-    pr = pr_info[int(nr)]
-    age = file_age(status_file(nr))
-    min_wait = 0.5
-    if not (age is None or age > min_wait):
-        log("Did not build paper %d--recently built." % nr)
-        return
 
-    status_log = status_file(nr)
-    with io.open(status_log, 'wb') as f:
-        build_record = {'status': 'fail',
-                        'data': {'build_status': 'Building...',
-                                 'build_output': 'Initializing build...',
-                                 'build_timestamp': ''}}
-        json.dump(build_record, codecs.getwriter('utf-8')(f), ensure_ascii=False)
-
-
-    def build_and_log(*args, **kwargs):
-        build_manager = BuildManager(*args, **kwargs)
-        status = build_manager.build_paper()
-        with io.open(status_log, 'wb') as f:
-            json.dump(status, codecs.getwriter('utf-8')(f), ensure_ascii=False)
-
-    p = Process(target=build_and_log,
-                kwargs=dict(user=pr['user'],
-                            branch=pr['branch'],
-                            master_branch=MASTER_BRANCH,
-                            target=nr, log=log))
-    p.start()
-
-    def killer(process, timeout):
-        time.sleep(timeout)
-        try:
-            process.terminate()
-        except OSError:
-            pass
-
-    k = Process(target=killer, args=(p, 180))
-    k.start()
-
-    # Wait for process to complete or to be killed
-    p.join()
-    k.terminate()
-
-@app.route('/build_queue_size')
-def print_build_queue(nr=None):
-
-    return jsonify(paper_queue[1])
+#@app.route('/build_queue_size')
+#def print_build_queue(nr=None):
+#
+#    return jsonify(paper_queue[1])
 
 @app.route('/status')
 @app.route('/status/<nr>')
@@ -227,4 +115,3 @@ def webhook():
         return jsonify({'status': 'fail',
                         'message': 'Hook called for building '
                                    'non-existing paper (%s)' % pr_url})
-

@@ -1,5 +1,3 @@
-from __future__ import print_function, absolute_import, division
-
 import tempfile
 import subprocess
 import shlex
@@ -11,19 +9,9 @@ import random
 from os.path import join as joinp
 from glob import iglob
 
+from . import package_path
+
 excluded = ['vanderwalt', '00_vanderwalt', 'jane_doe', 'bibderwalt', '00_intro']
-
-base_path = os.path.abspath(os.path.dirname(__file__))
-
-
-def cache(path='../cache'):
-    cache_path = joinp(base_path, path)
-    try:
-        os.mkdir(cache_path)
-    except OSError as e:
-        pass
-
-    return cache_path
 
 
 def repo(user='scipy'):
@@ -90,12 +78,18 @@ class BuildManager:
     
     Parameters
     ----------
-    user: str; name of GitHub user
-    branch: str; name of git branch on user's PR
-    target: str; string representation of integer for which paper to build
-    cache: str; cache directory in which the build tools and final paper live
-    master_branch: str; git branch for build tools 
-    log: function; logging function
+    user : str
+        name of GitHub user
+    branch : str
+        name of git branch on user's PR
+    target : str
+        string representation of integer for which paper to build
+    cache : str
+        cache directory in which the build tools and final paper live
+    master_branch : str, optional
+        git branch for build tools, defaults to "master"
+    log : function
+        logging function
     """
     
     def __init__(self, 
@@ -121,7 +115,7 @@ class BuildManager:
         data_filenames = ['IEEEtran.cls', 
                           'draftwatermark.sty', 
                           'everypage.sty']
-        self.data_files = [joinp(base_path, 'data', f) for f in data_filenames]
+        self.data_files = [joinp(package_path, 'data', f) for f in data_filenames]
 
     def add_output(self, msg):
         self.build_output += msg
