@@ -7,7 +7,7 @@ from procbuild.submitter import BuildRequestSubmitter
 import sys
 
 if len(sys.argv) > 1:
-    to_build = argv[1:]
+    to_build = sys.argv[1:]
 else:
     to_build = [nr for nr, info in get_papers()]
 
