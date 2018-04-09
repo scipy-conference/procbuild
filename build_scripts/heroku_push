@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "$HEROKU_TOKEN" | docker login -u _ --password-stdin registry.heroku.com
+docker push registry.heroku.com/procbuild/web
