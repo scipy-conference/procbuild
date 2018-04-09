@@ -80,6 +80,40 @@ Then you need to push it to the heroku registry
 docker push registry.heroku.com/procbuild/web
 ```
 
+## Working with Travis
+
+[Travis](https://travis-ci.org/scipy-conference/procbuild) is our continuous
+integration system. We use it to run tests (via `pytest`) and to build and
+deploy our docker images to DockerHub and Heroku, which backs the [procbuild.scipy.org](http://procbuild.scipy.org) website.
+
+### Updating the year
+
+When running Travis, we need to know the `MASTER_BRANCH` so that we can create
+appropriate docker image numbers.
+
+```bash
+travis env set MASTER_BRANCH $MASTER_BRANCH --public
+```
+
+### What should travis do when you make a PR?
+
+We have set Travis up to attempt to build a Docker image from the Dockerfile on 
+every PR and commit.
+
+If you want to change this behaviour, you will need to change the top-level
+`script` field in `.travis.yml`. But, you will also need to change the scripts
+in the `build_scripts/` directory to handle whatever changes you make.
+
+### What should travis do when `master` changes?
+
+We have set Travis up to deploy and push the docker images it builds to
+[DockerHub](https://hub.docker.com/r/scipyproc/procbuild/) and to 
+[Heroku's Docker registry](https://devcenter.heroku.com/articles/container-registry-and-runtime#logging-in-to-the-registry).
+
+This deploy script should be triggered every time any commit is made to master.
+This includes both PRs being merged into master and commits made directly to
+master.
+
 ## General notes
 
 - Customize `runserver.py` to update this year's branch.
