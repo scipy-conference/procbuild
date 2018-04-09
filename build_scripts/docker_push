@@ -1,3 +1,4 @@
 #!/bin/bash
 echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
 docker push scipyproc/procbuild:$(git rev-parse HEAD).$MASTER_BRANCH
+docker push scipyproc/procbuild:latest
