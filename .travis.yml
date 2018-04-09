@@ -1,12 +1,27 @@
+sudo: required
 language: python
-
+services:
+- docker
 python:
-  - 3.6
-install: 
-  - pip install --upgrade setuptools pip  
-  - pip install -r requirements.txt
-  - pip install -r <(curl --silent https://raw.githubusercontent.com/scipy-conference/scipy_proceedings/2018/requirements.txt)
+- 3.6
+install:
+- pip install --upgrade setuptools pip
+- pip install -r requirements.txt
+- pip install -r <(curl --silent https://raw.githubusercontent.com/scipy-conference/scipy_proceedings/2018/requirements.txt)
 script:
-  - pytest
-
-  
+- pytest
+- docker build -t scipyproc/procbuild .
+- docker tag scipyproc/procbuild scipyproc/procbuild:$(git rev-parse HEAD).$MASTER_BRANCH
+- docker tag scipyproc/procbuild registry.heroku.com/procbuild/web
+deploy:
+  provider: script
+  script:
+  - bash docker_push
+  - bash heroku_push
+  on:
+    branch: master
+env:
+  global:
+  - secure: hZtAMITDimlE+xS1O1uY4HV9+NnCEATiuj2KdeZubnAESgQEIy/nMuES0uMOgabWhW0ziSKx3xGZlW4KVGVVtDNLJHT527P9bhGWmvzfI2XyeukYVLmOmXYURUNatPmH4Ll7tni+NRnMMKAbPsmlH20a2zhOX9KaSy/zVrHLv+k=
+  - secure: isINB6dDcGeEWB1qbUgTP/J57FiRSAxsbTjKKmv6iz0AiUldSAP9NUBhvAY7JN5tLvDfxVIJH4ip7yJNlGgP2iAXG4m+Oy05+qbetyF1X3VWlKi5widV++ni2+1im4ZX/7eREY2DiC1DEUi3Vy7geu8kFbWrQhEKvXPXIhyrVik=
+  - secure: fKXsUDFFHpZgjdiG4w9nLwIa2gZvnBtbqeiVLK1BE6wj9rim8LYBL381ydv/4IzdfprvgxTeCr3sWJyRz5UPJbj+qa2MbkkLq2AEL4t49bpoRBQfT1W+aFP+OiV7uOgiWAjD4tvdetEr5jEjPzlGtxDLVlWdOQ/JU7OPEGAibZA=
