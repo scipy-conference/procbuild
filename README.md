@@ -32,7 +32,13 @@ docker run -it -p 7001:7001 yourname/procbuild
 
 ## Pushing the Docker image to SciPy's DockerHub repository
 
-If you want to push the image to DockerHub so that it can be publicly available you would need to assign it that tag. 
+Before you push the image, you need to make sure you remove the cache.
+
+```bash
+rm -rf cache
+```
+
+If you want to push the image to DockerHub so that it can be publicly available you would need to assign it the `scipyproc/procbuild` tag. 
 
 
 ```bash
@@ -48,7 +54,8 @@ docker tag scipyproc/procbuild scipyproc/procbuild:x.y
 Then you should push these up to the DockerHub repository (the default repository). This should push up both the latest version and the version number.
 
 ```bash
-docker push scipyproc/procbuild
+docker push scipyproc/procbuild:latest
+docker push scipyproc/procbuild:x.y
 ```
 
 ## Pushing the Docker image to Heroku's repository
