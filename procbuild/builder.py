@@ -66,16 +66,16 @@ def shell(cmd, path=None, retry=0):
 def checkout(repo, branch, build_path):
     return shell(f'git clone {repo} --branch {branch} --single-branch {build_path}', retry=4)
 
-    
+
 class BuildError(Exception):
-    
+
     def __init__(self, message):
         self.message = f"A build error occurred during the self.{message} step."
 
-        
+
 class BuildManager:
     """
-    
+
     Parameters
     ----------
     user : str
@@ -91,13 +91,13 @@ class BuildManager:
     log : function
         logging function
     """
-    
-    def __init__(self, 
-                 user, 
-                 branch, 
-                 target, 
+
+    def __init__(self,
+                 user,
+                 branch,
+                 target,
                  cache,
-                 master_branch='master', 
+                 master_branch='master',
                  log=None):
         self.user = user
         self.build_output = ''
@@ -111,9 +111,9 @@ class BuildManager:
         self.build_timestamp = time.strftime('%d/%m %H:%M')
         self.target_path = joinp(self.cache, f'{target!s}.pdf')
         self.build_path = None
-        
-        data_filenames = ['IEEEtran.cls', 
-                          'draftwatermark.sty', 
+
+        data_filenames = ['IEEEtran.cls',
+                          'draftwatermark.sty',
                           'everypage.sty']
         self.data_files = [joinp(package_path, 'data', f) for f in data_filenames]
 
@@ -132,35 +132,35 @@ class BuildManager:
 
     def _get_build_tools(self):
         """This command will get the latest version of the repo path.
-        
+
         """
         if not os.path.exists(self.master_repo_path):
             self.add_output('[*] Checking out proceedings build tools '
                             f'to {self.master_repo_path}...\n')
-            errcode, output = checkout(repo('scipy-conference'), 
+            errcode, output = checkout(repo('scipy-conference'),
                                        self.master_branch,
                                        self.master_repo_path)
         else:
             self.add_output('[*] Updating proceedings build tools in'
                             ' {self.master_repo_path}...\n')
             errcode, output = shell('git pull', self.master_repo_path, retry=2)
-        
+
         self.add_output(output)
-        
+
         if errcode:
             self.add_output('[X] Could not get build tools, errcode: %d ' % errcode)
             raise BuildError("get_build_tools")
-        
+
         self._remove_papers_dir()
-        
-    
+
+
     def _remove_papers_dir(self):
         """ this command will remove the papers dir from the build_tools dir
-        
+
         """
-        errcode, output = shell('rm -rf papers', 
+        errcode, output = shell('rm -rf papers',
                                 path=self.master_repo_path)
-        
+
         self.add_output(output)
 
         if errcode:
@@ -169,17 +169,17 @@ class BuildManager:
 
     def _checkout_paper_repo(self):
         self.add_output('[*] Check out paper repository...\n')
-        errcode, output = checkout(repo(self.user), 
-                                   self.branch, 
+        errcode, output = checkout(repo(self.user),
+                                   self.branch,
                                    self.build_path)
         self.add_output(output)
-        
+
         if errcode:
             self.add_output('[X] Could not checkout user\'s repo, errcode: %d\n' % errcode)
             self.build_status = 'Failed to check out paper'
             raise BuildError('checkout_paper_repo')
 
-    
+
     def _relocate_build_tools(self):
         """Move local build tools into temporary directory
         """
@@ -195,18 +195,18 @@ class BuildManager:
     def _relocate_static_files(self):
         for f in self.data_files:
             shutil.copy(f, self.paper_path)
-    
+
     @property
     def paper_path(self):
         return joinp(self.build_path, 'papers', self.paper)
-        
+
     @property
     def paper(self):
         """This returns the directory from inside the papers/ directory in the PR.
-        
-        There should be one unique directory in the PR's papers/ directory that 
+
+        There should be one unique directory in the PR's papers/ directory that
         is not explicitly excluded based on values in ``excluded``.
-        
+
         This will err if the there no papers are found after exclusion.
         """
         papers = [p for p in iglob(self.build_path + '/papers/*')
@@ -216,21 +216,21 @@ class BuildManager:
             self.add_output('[X] No build path declared: %s\n' % papers)
             self.build_status = 'No build path declared'
             raise BuildError('paper')
-        
+
         if len(papers) < 1:
             self.add_output('[X] No papers found: %s\n' % papers)
             self.build_status = 'Paper not found'
             raise BuildError('paper')
         else:
             return papers[0].split('/')[-1]
-    
+
     def _run_make_paper_script(self):
         """Runs the scipy_proceedings make_paper.sh script
-        
+
         """
         self.add_output('[*] Build the paper...\n')
         errcode, output = shell('./make_paper.sh %s' % self.paper_path, self.build_path)
-        # errcode, output = shell('./make_paper.sh %s' self.paper_path, 
+        # errcode, output = shell('./make_paper.sh %s' self.paper_path,
         #                         self.build_path)
         self.add_output(output)
         if errcode:
@@ -262,7 +262,7 @@ class BuildManager:
         except BuildError as e:
             self.add_output(e.message)
             return self.status_report
-        
+
         self.status = 'success'
         self.build_status = 'success'
         self.build_pdf_path = self.target_path

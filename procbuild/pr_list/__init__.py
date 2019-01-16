@@ -22,41 +22,42 @@ def get_pr_list_file():
     return joinp(cache(), 'pr_info.json')
 
 
-def status_file(nr):
-    return joinp(cache(), str(nr) + '.status')
+def status_file(fork):
+    return joinp(cache(), fork + '.status')
 
+def fork_name(user, branch):
+    return '-'.join((user, branch))
 
-def status_from_cache(nr):
+def status_from_cache(fork):
     papers = get_papers()
-    if nr == '*':
-        status_files = [status_file(i) for i in range(len(papers))]
+    if fork == '*':
+        forks = papers.keys()
+        status_files = [status_file(fork) for fork in forks]
     else:
-        status_files = [status_file(nr)]
+        forks = [fork]
+        status_files = [status_file(fork)]
 
     data = {}
 
-    for fn in status_files:
-        n = fn.split('/')[-1].split('.')[0]
+    for fork, fp in zip(forks, status_files):
 
-        try:
-            papers[int(n)]
-        except:
-            data[n] = {'status': 'fail',
-                       'data': {'build_output': 'Invalid paper'}}
-        else:
-            status = {'status': 'fail',
+        if fork in papers:
+            data[fork] = {'status': 'fail',
                       'data': {'build_output': 'No build info'}}
+        else:
+            data[fork] = {'status': 'fail',
+                       'data': {'build_output': 'Invalid paper'}}
 
-            if os.path.exists(fn):
-                with io.open(fn, 'r') as f:
-                    try:
-                        data[n] = json.load(f)
-                    except ValueError:
-                        pass
+        if os.path.exists(fp):
+            with io.open(fp, 'r') as f:
+                try:
+                    data[fork] = json.load(f)
+                except ValueError as e:
+                    pass
 
     # Unpack status if only one record requested
-    if nr != '*':
-        return data[nr]
+    if fork != '*':
+        return {fork: data[fork]}
     else:
         return data
 
@@ -78,17 +79,17 @@ def get_pr_info():
 
 
 def get_papers():
-    return [(str(n), pr) for n, pr in enumerate(get_pr_info())]
+    return {fork_name(pr['user'], pr['branch']): pr for pr in get_pr_info()}
 
 
 def fetch_PRs(user, repo, state='open'):
     """This command fetches PR information based on the passed in parameters.
-    
+
     It specifies how many responses are expected per page, and so if we ever
     receive fewer than that number of responses, we know that there are no more.
     """
     responses_per_page = 100
-    
+
     fields = {'state': state,
               'per_page': responses_per_page,
               'page': 1}
@@ -135,12 +136,12 @@ def fetch_PRs(user, repo, state='open'):
 
 
 def update_papers():
-    PRs = fetch_PRs(user='scipy-conference', 
-                    repo='scipy_proceedings', 
+    PRs = fetch_PRs(user='scipy-conference',
+                    repo='scipy_proceedings',
                     state='open')
 
     PRs = [p for p in reversed(PRs) if p['title'].startswith('Paper:')]
-    
+
     pr_info = []
     for p in PRs:
         pr_info.append({'user': p['head']['user']['login'], 'title': p['title'],
