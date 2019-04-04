@@ -31,30 +31,29 @@ def fork_name(user, branch):
 def status_from_cache(fork):
     papers = get_papers()
     if fork == '*':
-        forks = papers.keys()
-        status_files = [status_file(fork) for fork in forks]
+        keys = papers.keys()
+        status_files = [status_file(key) for key in keys]
     else:
-        forks = [fork]
+        keys = [fork]
         status_files = [status_file(fork)]
 
     data = {}
 
-    for fork, fp in zip(forks, status_files):
+    for key, fp in zip(keys, status_files):
 
-        if fork in papers:
-            data[fork] = {'status': 'fail',
+        if key in papers:
+            data[key] = {'status': 'fail',
                       'data': {'build_output': 'No build info'}}
         else:
-            data[fork] = {'status': 'fail',
+            data[key] = {'status': 'fail',
                        'data': {'build_output': 'Invalid paper'}}
 
         if os.path.exists(fp):
             with io.open(fp, 'r') as f:
                 try:
-                    data[fork] = json.load(f)
+                    data[key] = json.load(f)
                 except ValueError as e:
                     pass
-
     # Unpack status if only one record requested
     if fork != '*':
         return {fork: data[fork]}
