@@ -25,34 +25,34 @@ def index():
     papers = get_papers()
 
     return render_template('index.html', papers=papers,
-                           build_url=url_for('build', nr=''),
-                           download_url=url_for('download', nr=''),
+                           build_url=url_for('build', fork=''),
+                           download_url=url_for('download', fork=''),
                            allow_manual_build_trigger=ALLOW_MANUAL_BUILD_TRIGGER)
 
 
 
-def dummy_build(nr):
+def dummy_build(fork):
     return jsonify({'status': 'fail', 'message': 'Not authorized'})
 
 
-def real_build(nr):
-    pr_info = get_pr_info()
+def real_build(fork):
+    papers = get_papers()
     try:
-        pr = pr_info[int(nr)]
+        pr = papers[fork]
     except:
         return jsonify({'status': 'fail',
                         'message': 'Invalid paper specified'})
 
-    submitter.submit(nr)
+    submitter.submit(fork)
 
     return jsonify({'status': 'success',
                     'data': {'info': 'Build for paper %s scheduled.  Note that '
                                      'builds are only executed if the current '
                                      'build attempt is more than '
-                                     '5 minutes old.' % nr}})
+                                     '5 minutes old.' % fork}})
 
 
-@app.route('/build/<nr>')
+@app.route('/build/<fork>')
 def build(*args, **kwarg):
     if ALLOW_MANUAL_BUILD_TRIGGER:
         return real_build(*args, **kwarg)
@@ -67,24 +67,24 @@ def build(*args, **kwarg):
 #    return jsonify(paper_queue[1])
 
 @app.route('/status')
-@app.route('/status/<nr>')
-def status(nr=None):
+@app.route('/status/<fork>')
+def status(fork=None):
     data = []
 
-    if nr is None:
-        nr = '*'
+    if fork is None:
+        fork = '*'
 
-    return jsonify(status_from_cache(nr))
+    return jsonify(status_from_cache(fork))
 
 
-@app.route('/download/<nr>')
-def download(nr):
-    status = status_from_cache(nr)
+@app.route('/download/<fork>')
+def download(fork):
+    status = status_from_cache(fork)
 
-    if not (status.get('data', {}).get('build_status', '') == 'success'):
+    if not (status.get(fork, {}).get('data', {}).get('build_status', '') == 'success'):
         return "Paper has not been successfully rendered yet."
 
-    return send_file(status['data']['build_pdf_path'])
+    return send_file(status[fork]['data']['build_pdf_path'])
 
 
 @app.route('/webhook', methods=['POST'])
@@ -107,7 +107,7 @@ def webhook():
 
     papers = get_papers()
     pr_url = data.get('pull_request', {}).get('html_url', '')
-    paper = [p for p, info in papers if info['url'] == pr_url]
+    paper = [p for p, info in papers.items() if info['url'] == pr_url]
 
     if paper:
         return real_build(paper[0])
