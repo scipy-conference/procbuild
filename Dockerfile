@@ -1,12 +1,19 @@
-FROM ubuntu:17.10
+FROM ubuntu:latest
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+ENV UID_PROCBUILD=1002
+ENV GID_PROCBUILD=1006
 
 RUN apt-get update && \
     apt-get install -y python3.6 python3.6-venv git curl \
     texlive-latex-base texlive-publishers texlive-fonts-recommended  \
     texlive-latex-extra texlive-bibtex-extra && \
+    apt-get install -y python3-venv && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
-    useradd --create-home --shell /bin/bash procbuild
+    groupadd -g ${GID_PROCBUILD} procbuild && \
+    useradd -u ${UID_PROCBUILD} -g ${GID_PROCBUILD} --create-home --shell /bin/bash procbuild
 
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
