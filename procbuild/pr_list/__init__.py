@@ -26,7 +26,7 @@ def status_file(fork):
     return joinp(cache(), fork + '.status')
 
 def fork_name(user, branch):
-    return '-'.join((user, branch))
+    return '-'.join((user, branch)).replace('/', '-').replace('\\', '-')
 
 def status_from_cache(fork):
     papers = get_papers()
