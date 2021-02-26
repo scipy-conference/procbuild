@@ -6,7 +6,7 @@ from procbuild.server import app
 from waitress import serve
 
 # -- SERVER CONFIGURATION -- (can be overridden from shell)
-config = (('MASTER_BRANCH', '2019'),
+config = (('MASTER_BRANCH', '2020'),
           ('ALLOW_MANUAL_BUILD_TRIGGER', '1'),
           ('PORT', '7001'))
 

@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:bionic
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -6,10 +6,9 @@ ENV UID_PROCBUILD=1002
 ENV GID_PROCBUILD=1006
 
 RUN apt-get update && \
-    apt-get install -y python3.6 python3.6-venv git curl \
+    apt-get install -y python3.6 python3-venv git curl \
     texlive-latex-base texlive-publishers texlive-fonts-recommended  \
     texlive-latex-extra texlive-bibtex-extra && \
-    apt-get install -y python3-venv && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     groupadd -g ${GID_PROCBUILD} procbuild && \
@@ -28,7 +27,7 @@ RUN bash -c "python3.6 -m venv /procbuild_env && \
 RUN bash -c "source /procbuild_env/bin/activate && \
     pip install --upgrade pip && \
     pip install -r requirements.txt && \
-    pip install -r <(curl --silent https://raw.githubusercontent.com/scipy-conference/scipy_proceedings/2019/requirements.txt)"
+    pip install -r <(curl --silent https://raw.githubusercontent.com/scipy-conference/scipy_proceedings/2020/requirements.txt)"
 
 USER procbuild
 
