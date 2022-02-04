@@ -5,7 +5,7 @@ python:
 install: 
   - pip install --upgrade setuptools pip  
   - pip install -r requirements.txt
-  - pip install -r <(curl --silent https://raw.githubusercontent.com/scipy-conference/scipy_proceedings/2021/requirements.txt)
+  - pip install -r <(curl --silent https://raw.githubusercontent.com/scipy-conference/scipy_proceedings/2022/requirements.txt)
 script:
   - pytest
 
