@@ -27,7 +27,7 @@ RUN bash -c "python3.6 -m venv /procbuild_env && \
 RUN bash -c "source /procbuild_env/bin/activate && \
     pip install --upgrade pip && \
     pip install -r requirements.txt && \
-    pip install -r <(curl --silent https://raw.githubusercontent.com/scipy-conference/scipy_proceedings/2021/requirements.txt)"
+    pip install -r <(curl --silent https://raw.githubusercontent.com/scipy-conference/scipy_proceedings/2022/requirements.txt)"
 
 USER procbuild
 
