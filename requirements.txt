@@ -1,4 +1,4 @@
-Flask==1.0
+Flask==2.3.2
 waitress==2.0.0
 urllib3==1.26.5
 pyzmq==17.0.0
