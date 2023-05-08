@@ -1,4 +1,4 @@
-FROM ubuntu:bionic
+FROM ubuntu:focal
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -6,7 +6,7 @@ ENV UID_PROCBUILD=1002
 ENV GID_PROCBUILD=1006
 
 RUN apt-get update && \
-    apt-get install -y python3.6 python3-venv git curl \
+    apt-get install -y build-essential python3 python3-dev python3-wheel python3-venv git curl \
     texlive-latex-base texlive-publishers texlive-fonts-recommended  \
     texlive-latex-extra texlive-bibtex-extra && \
     apt-get clean && \
@@ -20,7 +20,7 @@ ENV LANG=C.UTF-8
 ADD . /procbuild
 WORKDIR /procbuild
 
-RUN bash -c "python3.6 -m venv /procbuild_env && \
+RUN bash -c "python3 -m venv /procbuild_env && \
     chown -R procbuild.procbuild /procbuild_env && \
     chown -R procbuild.procbuild /procbuild"
 
