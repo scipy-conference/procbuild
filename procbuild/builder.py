@@ -11,7 +11,8 @@ from glob import iglob
 
 from . import package_path
 
-excluded = ['bibderwalt', 'intro', 'texderwalt']
+excluded = ['00_bibderwalt', '00_intro', '00_texderwalt',
+               'bibderwalt',    'intro',    'texderwalt']
 
 
 def repo(user='scipy'):
