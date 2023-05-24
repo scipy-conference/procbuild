@@ -8,7 +8,7 @@ ENV GID_PROCBUILD=1006
 RUN apt-get update && \
     apt-get install -y build-essential python3 python3-dev python3-wheel python3-venv git curl \
     texlive-latex-base texlive-publishers texlive-fonts-recommended  \
-    texlive-latex-extra texlive-bibtex-extra && \
+    texlive-latex-extra texlive-bibtex-extra texlive-science && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     groupadd -g ${GID_PROCBUILD} procbuild && \
