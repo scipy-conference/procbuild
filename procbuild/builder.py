@@ -15,8 +15,10 @@ excluded = ['00_bibderwalt', '00_intro', '00_texderwalt',
                'bibderwalt',    'intro',    'texderwalt']
 
 
-def repo(user='scipy'):
-    return f'https://github.com/{user}/scipy_proceedings.git'
+def clone_url(user='scipy', repo='scipy_proceedings'):
+    # TODO can we replace this with
+    # payload['repo']['head']['clone_url']?
+    return f'https://github.com/{user}/{repo}.git'
 
 
 def error(msg):
@@ -64,8 +66,8 @@ def shell(cmd, path=None, retry=0):
     return returncode, output.strip() + b'\n'
 
 
-def checkout(repo, branch, build_path):
-    return shell(f'git clone {repo} --branch {branch} --single-branch {build_path}', retry=4)
+def checkout(url, branch, build_path):
+    return shell(f'git clone {url} --branch {branch} --single-branch {build_path}', retry=4)
 
 
 class BuildError(Exception):
@@ -95,12 +97,14 @@ class BuildManager:
 
     def __init__(self,
                  user,
+                 repo,
                  branch,
                  target,
                  cache,
                  master_branch='master',
                  log=None):
         self.user = user
+        self.repo = repo
         self.build_output = ''
         self.status = 'fail'
         self.branch = branch
@@ -138,9 +142,10 @@ class BuildManager:
         if not os.path.exists(self.master_repo_path):
             self.add_output('[*] Checking out proceedings build tools '
                             f'to {self.master_repo_path}...\n')
-            errcode, output = checkout(repo('scipy-conference'),
-                                       self.master_branch,
-                                       self.master_repo_path)
+            errcode, output = checkout(
+                clone_url('scipy-conference', 'scipy_proceedings'),
+                self.master_branch, self.master_repo_path
+            )
         else:
             self.add_output('[*] Updating proceedings build tools in'
                             ' {self.master_repo_path}...\n')
@@ -170,7 +175,7 @@ class BuildManager:
 
     def _checkout_paper_repo(self):
         self.add_output('[*] Check out paper repository...\n')
-        errcode, output = checkout(repo(self.user),
+        errcode, output = checkout(clone_url(self.user, self.repo),
                                    self.branch,
                                    self.build_path)
         self.add_output(output)
