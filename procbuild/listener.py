@@ -150,6 +150,7 @@ class Listener:
         self.paper_log(fork, build_record)
 
         build_manager = BuildManager(user=pr['user'],
+                                     repo=pr['repo'],
                                      branch=pr['branch'],
                                      cache=cache(),
                                      master_branch=MASTER_BRANCH,

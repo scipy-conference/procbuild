@@ -143,8 +143,13 @@ def update_papers():
 
     pr_info = []
     for p in PRs:
-        pr_info.append({'user': p['head']['user']['login'], 'title': p['title'],
-                        'branch': p['head']['ref'], 'url': p['html_url']})
+        pr_info.append({
+            'user': p['head']['user']['login'],
+            'repo': p['head']['repo']['name'],
+            'title': p['title'],
+            'branch': p['head']['ref'],
+            'url': p['html_url']}
+        )
 
     with io.open(get_pr_list_file(), 'wb') as f:
         json.dump(pr_info, codecs.getwriter('utf-8')(f), ensure_ascii=False)
